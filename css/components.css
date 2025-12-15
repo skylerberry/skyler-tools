@@ -2095,6 +2095,7 @@
 /* === R-Multiple Chart Levels === */
 
 .r-levels {
+  display: none;
   width: 100%;
   margin: var(--space-6) 0;
   padding: 0;
@@ -2103,6 +2104,7 @@
 }
 
 .r-levels.visible {
+  display: block;
   opacity: 1;
 }
 
