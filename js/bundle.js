@@ -2351,10 +2351,15 @@ const HintArrow = {
   },
 
   scrollToInput() {
-    const inputPanel = document.querySelector('.panel--input');
-    if (inputPanel) {
-      inputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Scroll to top - use instant then smooth for iOS Safari compatibility
+    window.scrollTo(0, 0);
+    // Small timeout then smooth scroll to trigger proper rendering
+    setTimeout(() => {
+      window.scrollTo({ top: 1, behavior: 'smooth' });
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 50);
+    }, 10);
   }
 };
 
