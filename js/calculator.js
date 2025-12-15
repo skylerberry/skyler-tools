@@ -85,6 +85,30 @@ class Calculator {
     if (this.elements.clearCalculatorBtn) {
       this.elements.clearCalculatorBtn.addEventListener('click', () => this.clear());
     }
+
+    // Stepper buttons for entry/stop
+    document.querySelectorAll('.input-stepper__btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.handleStepper(e));
+    });
+  }
+
+  handleStepper(e) {
+    const btn = e.target.closest('.input-stepper__btn');
+    if (!btn) return;
+
+    const targetId = btn.dataset.target;
+    const direction = btn.dataset.direction;
+    const input = document.getElementById(targetId);
+    if (!input) return;
+
+    const currentValue = parseFloat(input.value) || 0;
+    const step = 0.01;
+    const newValue = direction === 'up'
+      ? currentValue + step
+      : Math.max(0, currentValue - step);
+
+    input.value = newValue.toFixed(2);
+    this.calculate();
   }
 
   clear() {
@@ -115,14 +139,14 @@ class Calculator {
     group.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    // Determine which preset and update
-    const card = btn.closest('.card');
-    const title = card?.querySelector('.card__title')?.textContent || '';
+    // Determine which preset by finding the parent settings-item label
+    const settingsItem = btn.closest('.settings-item');
+    const label = settingsItem?.querySelector('.input-label')?.textContent || '';
 
-    if (title.includes('Risk')) {
+    if (label.includes('Risk')) {
       this.elements.riskPercent.value = value;
       state.updateAccount({ riskPercent: value });
-    } else if (title.includes('Max Position')) {
+    } else if (label.includes('Max Position')) {
       this.elements.maxPositionPercent.value = value;
       state.updateAccount({ maxPositionPercent: value });
     }
@@ -256,7 +280,7 @@ class Calculator {
     if (this.elements.riskPercentDisplay) this.elements.riskPercentDisplay.textContent = `${formatPercent(state.account.riskPercent)} of account`;
     if (this.elements.stopDistance) this.elements.stopDistance.textContent = formatPercent(r.stopDistance);
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${formatCurrency(r.stopPerShare)}/share`;
-    if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = ticker;
+    if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;
 
     // Profit targets
     if (r.rMultiple !== null) {
@@ -288,7 +312,7 @@ class Calculator {
       target5R: '—',
       potentialProfit: '—',
       profitROI: '—',
-      resultsTicker: '—'
+      resultsTicker: 'Ticker: —'
     };
 
     Object.entries(defaults).forEach(([key, value]) => {

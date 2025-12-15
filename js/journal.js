@@ -220,6 +220,16 @@ class Journal {
     if (!this.elements.riskSummary) return;
 
     const openTrades = state.getOpenTrades();
+
+    // Show CASH status when no open trades
+    if (openTrades.length === 0) {
+      this.elements.riskSummary.innerHTML = `
+        <span class="risk-summary__label">Status:</span>
+        <span class="risk-summary__indicator risk-summary__indicator--low">CASH</span>
+      `;
+      return;
+    }
+
     const totalRisk = openTrades.reduce((sum, t) => sum + t.riskDollars, 0);
     const riskPercent = (totalRisk / state.account.currentSize) * 100;
 

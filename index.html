@@ -37,7 +37,7 @@
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
   <!-- Styles -->
   <link rel="stylesheet" href="css/variables.css">
@@ -95,6 +95,7 @@
                 <span>Clear</span>
               </button>
             </div>
+            <p class="card__tagline">Calculate position size based on your risk</p>
             <div class="card__body">
               <!-- Paste Alert - Drop Zone -->
               <button class="drop-zone" id="pasteAlertBtn">
@@ -129,7 +130,7 @@
               <div class="input-row">
                 <div class="input-group">
                   <label class="input-label" for="entryPrice">Entry Price</label>
-                  <div class="input-wrapper input-wrapper--prefix">
+                  <div class="input-wrapper input-wrapper--prefix input-wrapper--stepper">
                     <span class="input-prefix">$</span>
                     <input
                       type="text"
@@ -137,6 +138,10 @@
                       id="entryPrice"
                       placeholder="0.00"
                     >
+                    <div class="input-stepper">
+                      <button type="button" class="input-stepper__btn" data-target="entryPrice" data-direction="up" title="Increase by 0.01" tabindex="-1">+</button>
+                      <button type="button" class="input-stepper__btn" data-target="entryPrice" data-direction="down" title="Decrease by 0.01" tabindex="-1">−</button>
+                    </div>
                   </div>
                 </div>
                 <div class="input-group">
@@ -147,7 +152,7 @@
                       <span class="tooltip__content">Your exit price if the trade goes against you. Set below your entry price for long positions to limit potential losses.</span>
                     </span>
                   </label>
-                  <div class="input-wrapper input-wrapper--prefix">
+                  <div class="input-wrapper input-wrapper--prefix input-wrapper--stepper">
                     <span class="input-prefix">$</span>
                     <input
                       type="text"
@@ -155,6 +160,10 @@
                       id="stopLoss"
                       placeholder="0.00"
                     >
+                    <div class="input-stepper">
+                      <button type="button" class="input-stepper__btn" data-target="stopLoss" data-direction="up" title="Increase by 0.01" tabindex="-1">+</button>
+                      <button type="button" class="input-stepper__btn" data-target="stopLoss" data-direction="down" title="Decrease by 0.01" tabindex="-1">−</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -178,22 +187,43 @@
                 </div>
               </div>
 
-              <!-- Trade Insights -->
-              <div class="insights" id="tradeInsights">
-                <div class="insight insight--neutral">
-                  <span class="insight__icon">📊</span>
-                  <span class="insight__text">Enter entry and stop to see insights</span>
+              <!-- Risk Selection -->
+              <div class="risk-selector">
+                <div class="risk-selector__header">
+                  <label class="input-label">
+                    Risk %
+                    <span class="tooltip">
+                      <span class="tooltip__icon">?</span>
+                      <span class="tooltip__content">The maximum % of your account you're willing to lose if stopped out. This is NOT your position size—you can use 20% of your account while only risking 1% if your stop is tight enough.</span>
+                    </span>
+                  </label>
+                </div>
+                <div class="risk-selector__buttons">
+                  <button type="button" class="risk-btn" data-risk="0.1">0.1%</button>
+                  <button type="button" class="risk-btn" data-risk="0.25">0.25%</button>
+                  <button type="button" class="risk-btn" data-risk="0.5">0.5%</button>
+                  <button type="button" class="risk-btn risk-btn--active" data-risk="1">1%</button>
+                </div>
+                <div class="risk-selector__custom">
+                  <span class="risk-selector__label">Custom</span>
+                  <div class="input-wrapper input-wrapper--suffix input-wrapper--compact">
+                    <input type="text" class="input input--mono" id="customRisk" placeholder="">
+                    <span class="input-suffix">%</span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Account Settings - Collapsible -->
+          <!-- Divider -->
+          <div class="panel-divider"></div>
+
+          <!-- Quick Settings - Collapsible -->
           <div class="card card--collapsible card--settings" id="settingsCard">
             <button class="card__header card__header--toggle" id="settingsToggle">
-              <span class="card__icon">⚙️</span>
-              <h2 class="card__title">Account Settings</h2>
-              <span class="settings-summary" id="settingsSummary">$50k · 1% · 100%</span>
+              <span class="card__icon">⚡</span>
+              <h2 class="card__title">Quick Settings</h2>
+              <span class="settings-summary" id="settingsSummary">$50k acc. · Max 100%</span>
               <svg class="card__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -202,7 +232,13 @@
               <div class="settings-grid">
                 <!-- Account Size -->
                 <div class="settings-item">
-                  <label class="input-label" for="accountSize">Account Size</label>
+                  <label class="input-label" for="accountSize">
+                    Account Size
+                    <span class="tooltip">
+                      <span class="tooltip__icon">?</span>
+                      <span class="tooltip__content">Enter your total account value (cash + positions), not just available cash. This ensures your risk calculations reflect your true portfolio size.</span>
+                    </span>
+                  </label>
                   <div class="input-wrapper input-wrapper--prefix">
                     <span class="input-prefix">$</span>
                     <input
@@ -214,30 +250,6 @@
                     >
                   </div>
                   <span class="input-hint">Supports K/M notation (e.g. 50k, 1.5m)</span>
-                </div>
-
-                <!-- Risk Per Trade -->
-                <div class="settings-item">
-                  <label class="input-label">
-                    Risk Per Trade
-                    <span class="tooltip">
-                      <span class="tooltip__icon">?</span>
-                      <span class="tooltip__content">Adjust based on market conditions: Risk-off (10 SMA below 20 SMA) = 0.1% or sit out. Risk-on (10 above 20) = 0.25-0.5%. Strong momentum = up to 1%.</span>
-                    </span>
-                  </label>
-                  <div class="preset-group preset-group--compact">
-                    <button class="preset-btn" data-value="0.1">0.1%</button>
-                    <button class="preset-btn" data-value="0.25">0.25%</button>
-                    <button class="preset-btn" data-value="0.5">0.5%</button>
-                    <button class="preset-btn active" data-value="1">1%</button>
-                  </div>
-                  <div class="preset-custom">
-                    <span class="preset-custom__label">Custom</span>
-                    <div class="input-wrapper input-wrapper--suffix input-wrapper--compact">
-                      <input type="text" class="input input--mono" id="riskPercent" value="1">
-                      <span class="input-suffix">%</span>
-                    </div>
-                  </div>
                 </div>
 
                 <!-- Max Position Size -->
@@ -281,26 +293,55 @@
 
           <!-- Welcome Card (shown when no calculation) -->
           <div class="welcome-card" id="welcomeCard">
-            <div class="welcome-card__icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="4" y="2" width="16" height="20" rx="2"></rect>
-                <line x1="8" y1="6" x2="16" y2="6"></line>
-                <line x1="8" y1="10" x2="10" y2="10"></line>
-                <line x1="14" y1="10" x2="16" y2="10"></line>
-                <line x1="8" y1="14" x2="10" y2="14"></line>
-                <line x1="14" y1="14" x2="16" y2="14"></line>
-                <line x1="8" y1="18" x2="10" y2="18"></line>
-                <line x1="14" y1="18" x2="16" y2="18"></line>
-              </svg>
+            <!-- Ghosted preview cards -->
+            <div class="welcome-card__preview">
+              <div class="welcome-card__ghost-card">
+                <span class="welcome-card__ghost-label">Shares to Buy</span>
+                <span class="welcome-card__ghost-value">250</span>
+              </div>
+              <div class="welcome-card__ghost-card">
+                <span class="welcome-card__ghost-label">Position Size</span>
+                <span class="welcome-card__ghost-value">$12,500</span>
+              </div>
+              <div class="welcome-card__ghost-card welcome-card__ghost-card--danger">
+                <span class="welcome-card__ghost-label">Risk Amount</span>
+                <span class="welcome-card__ghost-value">$500</span>
+              </div>
+              <div class="welcome-card__ghost-card welcome-card__ghost-card--success">
+                <span class="welcome-card__ghost-label">5R Target</span>
+                <span class="welcome-card__ghost-value">$62.50</span>
+              </div>
             </div>
-            <h3 class="welcome-card__title">Calculate Your Position</h3>
-            <ul class="welcome-card__list">
-              <li>Exact position size for your risk</li>
-              <li>Shares to buy at entry price</li>
-              <li>Risk amount in dollars</li>
-              <li>R-multiple profit targets</li>
-            </ul>
-            <p class="welcome-card__hint">← Enter entry & stop prices to begin</p>
+
+            <!-- Main content -->
+            <div class="welcome-card__content">
+              <div class="welcome-card__icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+                  <line x1="8" y1="6" x2="16" y2="6"></line>
+                  <line x1="8" y1="10" x2="10" y2="10"></line>
+                  <line x1="14" y1="10" x2="16" y2="10"></line>
+                  <line x1="8" y1="14" x2="10" y2="14"></line>
+                  <line x1="14" y1="14" x2="16" y2="14"></line>
+                  <line x1="8" y1="18" x2="10" y2="18"></line>
+                  <line x1="14" y1="18" x2="16" y2="18"></line>
+                </svg>
+              </div>
+              <h3 class="welcome-card__title">Size Your Trade</h3>
+              <p class="welcome-card__subtitle">Risk-based position sizing in seconds</p>
+              <ul class="welcome-card__list">
+                <li><span class="welcome-card__check"></span>Exact position size for your risk</li>
+                <li><span class="welcome-card__check"></span>Shares to buy at entry price</li>
+                <li><span class="welcome-card__check"></span>Risk amount in dollars</li>
+                <li><span class="welcome-card__check"></span>R-multiple profit targets</li>
+              </ul>
+              <p class="welcome-card__hint">
+                <span class="welcome-card__hint-arrow welcome-card__hint-arrow--left">←</span>
+                <span class="welcome-card__hint-arrow welcome-card__hint-arrow--up">↑</span>
+                <span class="welcome-card__hint-text">Enter entry & stop prices to begin</span>
+              </p>
+              <p class="welcome-card__hint-discord">(or paste a Discord alert to auto-fill)</p>
+            </div>
           </div>
 
           <!-- Primary Results (hidden until calculation) -->
@@ -396,15 +437,15 @@
             </div>
             <div class="card__body">
               <div class="input-group">
-                <label class="input-label" for="tradeNotes">Quick note <span class="label-optional">(optional)</span></label>
+                <label class="input-label" for="tradeNotes">Quick note <span class="label-optional">(Recommended)</span></label>
                 <textarea
                   class="input input--textarea"
                   id="tradeNotes"
-                  placeholder="e.g., Followed @trader's call..."
+                  placeholder="Setup: EP/Flag/Base? Theme? Entry tactic? Stop reasoning?"
                   rows="2"
                 ></textarea>
               </div>
-              <button class="btn btn--success btn--full" id="logTradeBtn">
+              <button class="btn btn--success btn--full" id="logTradeBtn" disabled>
                 Save to Journal
               </button>
             </div>
@@ -419,7 +460,7 @@
             </div>
             <div class="card__body">
               <div class="risk-summary" id="riskSummary">
-                <span class="risk-summary__label">Total Risk:</span>
+                <span class="risk-summary__label">Open Risk:</span>
                 <span class="risk-summary__value">$0</span>
                 <span class="risk-summary__percent">(0%)</span>
                 <span class="risk-summary__indicator risk-summary__indicator--low">LOW</span>
@@ -476,12 +517,12 @@
             <span class="input-prefix">$</span>
             <input type="text" class="input input--mono" id="settingsAccountSize" value="50,000">
           </div>
-          <span class="input-hint">Your baseline balance. Supports K/M notation.</span>
+          <span class="input-hint">Your baseline balance. Supports K/M notation (e.g. 50k, 1.5m)</span>
         </div>
 
         <div class="input-group">
           <label class="input-label">Default Risk Per Trade</label>
-          <div class="preset-group preset-group--sm">
+          <div class="preset-group preset-group--compact">
             <button class="preset-btn" data-setting="defaultRisk" data-value="0.1">0.1%</button>
             <button class="preset-btn" data-setting="defaultRisk" data-value="0.25">0.25%</button>
             <button class="preset-btn" data-setting="defaultRisk" data-value="0.5">0.5%</button>
@@ -491,7 +532,7 @@
 
         <div class="input-group">
           <label class="input-label">Default Max Position</label>
-          <div class="preset-group preset-group--sm">
+          <div class="preset-group preset-group--compact">
             <button class="preset-btn" data-setting="defaultMaxPos" data-value="10">10%</button>
             <button class="preset-btn" data-setting="defaultMaxPos" data-value="20">20%</button>
             <button class="preset-btn" data-setting="defaultMaxPos" data-value="50">50%</button>
@@ -538,7 +579,7 @@
 
         <div class="input-group">
           <label class="input-label">Theme</label>
-          <div class="preset-group">
+          <div class="preset-group preset-group--compact">
             <button class="preset-btn active" data-setting="theme" data-value="dark">Dark</button>
             <button class="preset-btn" data-setting="theme" data-value="light">Light</button>
           </div>
@@ -555,6 +596,10 @@
           <button class="btn btn--ghost text-danger" id="clearDataBtn">Clear All Data</button>
         </div>
       </div>
+    </div>
+
+    <div class="settings-panel__footer">
+      <span class="settings-panel__autosave">Changes saved automatically</span>
     </div>
   </aside>
 

@@ -1,7 +1,7 @@
 # Trade Manager - Project Status
 
 > **Domain:** tm.skyler.tools
-> **Current Version:** Trade Manager v1.0
+> **Current Version:** Trade Manager v1.1
 > **Last Updated:** December 14, 2025
 
 ---
@@ -9,6 +9,41 @@
 ## Overview
 
 Trade Manager is a suite of trading tools hosted on skyler.tools. The first tool is the **Risk Calculator** - a position sizing calculator for traders that helps manage risk, log trades, and track performance.
+
+---
+
+## v1.1 Checkpoint - UI/UX Refinements (Dec 14, 2025)
+
+### Quick Settings Overhaul
+- [x] Rebranded "Account Settings" to "Quick Settings" with ⚡ lightning bolt icon
+- [x] Converted from push-down to **overlay dropdown** (no layout shift)
+- [x] Smooth fade animation on expand/collapse
+- [x] Added "acc." suffix in collapsed summary for clarity ("$50k acc. · Max 100%")
+- [x] Added tooltip for Account Size explaining to enter total account value
+- [x] Added instant K/M notation auto-expand (50k → 50,000)
+- [x] Cursor position preserved after K/M formatting
+
+### Trade Setup Improvements
+- [x] Added panel divider between Trade Setup and Quick Settings
+- [x] Changed "Risk Per Trade" to "Risk %" label
+- [x] Added % suffix inside custom risk input field (consistent with $ prefix pattern)
+- [x] Added tooltip for Risk % explaining it's max loss %, not position size
+
+### Settings Panel Sync
+- [x] Settings panel Account Size now syncs with Quick Settings and header in real-time
+- [x] Added instant K/M notation formatting (ported from original risk calculator)
+- [x] Preset buttons now use consistent `--compact` styling (was `--sm`)
+- [x] Added helper text: "Supports K/M notation (e.g. 50k, 1.5m)"
+- [x] Added footer: "Changes saved automatically"
+
+### Journal Panel
+- [x] Changed "Total Risk:" to "Open Risk:" for clarity
+- [x] Changed Quick note "(optional)" to "(Recommended)"
+
+### Animation Fixes
+- [x] Fixed Quick Settings collapse animation snapping
+- [x] Fixed white flash on expand in dark mode (transparent border/shadow base state)
+- [x] Added smooth opacity/border/shadow transitions
 
 ---
 
@@ -70,7 +105,7 @@ Trade Manager is a suite of trading tools hosted on skyler.tools. The first tool
 - [x] Trade Setup as hero card
 - [x] Drop zone paste alert with NEW FEATURE badge
 - [x] Compact settings cards with presets
-- [x] K/M notation support (50k, 1.5m)
+- [x] K/M notation support with instant auto-expand (50k → 50,000)
 - [x] Toast notifications (bottom center, glassmorphism, icons)
 - [x] Keyboard shortcuts (Escape to close modals)
 - [x] Mobile responsive design
@@ -80,6 +115,10 @@ Trade Manager is a suite of trading tools hosted on skyler.tools. The first tool
 - [x] Welcome card with SVG calculator icon (inactive state)
 - [x] Consistent panel header styling
 - [x] Emoji icons in card headers (📋 Position Details, 📊 Active Trades)
+- [x] Quick Settings overlay dropdown (no layout shift)
+- [x] Input field prefix/suffix patterns ($ prefix, % suffix)
+- [x] Tooltips for Risk % and Account Size fields
+- [x] Settings panel syncs with Quick Settings in real-time
 
 ### Animations
 - [x] Page load panel animations (staggered)
@@ -87,6 +126,7 @@ Trade Manager is a suite of trading tools hosted on skyler.tools. The first tool
 - [x] Toast spring animation (bottom center pop-up)
 - [x] Settings panel slide animation
 - [x] Collapsible card expand/collapse
+- [x] Quick Settings overlay fade animation
 - [x] Button press feedback
 - [x] Header account value flash on update
 - [x] Save to Journal pulsing glow CTA
@@ -193,6 +233,10 @@ skyler.tools/
 - LocalStorage for persistence
 - No build tools required (static files)
 - Hosted on Netlify
+
+### Reference Implementation
+- Original risk calculator cloned to `C:\Users\cmsky\original-risk-calc`
+- Used for porting K/M notation instant formatting behavior
 
 ### Browser Support
 - Chrome, Firefox, Safari, Edge (modern versions)

@@ -280,7 +280,11 @@ const UI = {
     toast.innerHTML = `
       <span class="toast__icon">${icon}</span>
       <span class="toast__message">${message}</span>
-      <button class="toast__close">×</button>
+      <button class="toast__close" aria-label="Dismiss">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M1 1l8 8M9 1l-8 8"/>
+        </svg>
+      </button>
     `;
 
     toast.querySelector('.toast__close').addEventListener('click', () => {
@@ -322,7 +326,6 @@ const Calculator = {
   cacheElements() {
     this.elements = {
       accountSize: document.getElementById('accountSize'),
-      riskPercent: document.getElementById('riskPercent'),
       maxPositionPercent: document.getElementById('maxPositionPercent'),
       ticker: document.getElementById('ticker'),
       entryPrice: document.getElementById('entryPrice'),
@@ -340,7 +343,7 @@ const Calculator = {
       potentialProfit: document.getElementById('potentialProfit'),
       profitROI: document.getElementById('profitROI'),
       resultsTicker: document.getElementById('resultsTicker'),
-      tradeInsights: document.getElementById('tradeInsights'),
+      customRisk: document.getElementById('customRisk'),
       scenariosToggle: document.getElementById('scenariosToggle'),
       scenariosContent: document.getElementById('scenariosContent'),
       scenariosBody: document.getElementById('scenariosBody'),
@@ -349,17 +352,37 @@ const Calculator = {
   },
 
   bindEvents() {
-    const inputs = ['riskPercent', 'maxPositionPercent', 'ticker', 'entryPrice', 'stopLoss', 'targetPrice'];
+    const inputs = ['maxPositionPercent', 'ticker', 'entryPrice', 'stopLoss', 'targetPrice'];
     inputs.forEach(id => {
       const el = this.elements[id];
       if (el) el.addEventListener('input', () => this.calculate());
     });
 
     if (this.elements.accountSize) {
-      this.elements.accountSize.addEventListener('input', () => this.calculate());
+      this.elements.accountSize.addEventListener('input', (e) => {
+        const inputValue = e.target.value.trim();
+
+        // Instant format when K/M notation is used
+        if (inputValue && (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m'))) {
+          const converted = Utils.parseNumber(inputValue);
+          if (converted !== null) {
+            const cursorPosition = e.target.selectionStart;
+            const originalLength = e.target.value.length;
+            e.target.value = Utils.formatWithCommas(converted);
+            const newLength = e.target.value.length;
+            const newCursorPosition = Math.max(0, cursorPosition + (newLength - originalLength));
+            e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+            SettingsCard.updateSummary(converted, AppState.account.maxPositionPercent);
+          }
+        }
+        this.calculate();
+      });
       this.elements.accountSize.addEventListener('blur', (e) => {
         const num = Utils.parseNumber(e.target.value);
-        if (num !== null) e.target.value = Utils.formatWithCommas(num);
+        if (num !== null) {
+          e.target.value = Utils.formatWithCommas(num);
+          SettingsCard.updateSummary(num, AppState.account.maxPositionPercent);
+        }
       });
     }
 
@@ -374,6 +397,80 @@ const Calculator = {
     if (this.elements.clearCalculatorBtn) {
       this.elements.clearCalculatorBtn.addEventListener('click', () => this.clear());
     }
+
+    // Stepper buttons for entry/stop
+    document.querySelectorAll('.input-stepper__btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.handleStepper(e));
+    });
+
+    // Risk buttons
+    document.querySelectorAll('.risk-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.handleRiskButton(e));
+    });
+
+    // Custom risk input
+    if (this.elements.customRisk) {
+      this.elements.customRisk.addEventListener('input', () => this.handleCustomRisk());
+      this.elements.customRisk.addEventListener('blur', () => this.handleCustomRisk());
+    }
+  },
+
+  handleStepper(e) {
+    const btn = e.target.closest('.input-stepper__btn');
+    if (!btn) return;
+
+    const targetId = btn.dataset.target;
+    const direction = btn.dataset.direction;
+    const input = document.getElementById(targetId);
+    if (!input) return;
+
+    const currentValue = parseFloat(input.value) || 0;
+    const step = 0.01;
+    const newValue = direction === 'up'
+      ? currentValue + step
+      : Math.max(0, currentValue - step);
+
+    input.value = newValue.toFixed(2);
+    this.calculate();
+  },
+
+  handleRiskButton(e) {
+    const btn = e.target.closest('.risk-btn');
+    if (!btn) return;
+
+    const risk = parseFloat(btn.dataset.risk);
+    if (isNaN(risk)) return;
+
+    // Update active state
+    document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('risk-btn--active'));
+    btn.classList.add('risk-btn--active');
+
+    // Clear custom input
+    if (this.elements.customRisk) {
+      this.elements.customRisk.value = '';
+    }
+
+    // Update state and recalculate
+    if (this.elements.riskPercent) {
+      this.elements.riskPercent.value = risk;
+    }
+    AppState.updateAccount({ riskPercent: risk });
+    this.calculate();
+  },
+
+  handleCustomRisk() {
+    const value = parseFloat(this.elements.customRisk?.value);
+    if (isNaN(value) || value <= 0) return;
+
+    // Clear active state from preset buttons
+    document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('risk-btn--active'));
+
+    // Update state and recalculate
+    if (this.elements.riskPercent) {
+      this.elements.riskPercent.value = value;
+    }
+    AppState.updateAccount({ riskPercent: value });
+    this.calculate();
   },
 
   clear() {
@@ -404,13 +501,8 @@ const Calculator = {
     group.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const card = btn.closest('.card');
-    const title = card?.querySelector('.card__title')?.textContent || '';
-
-    if (title.includes('Risk')) {
-      this.elements.riskPercent.value = value;
-      AppState.updateAccount({ riskPercent: value });
-    } else if (title.includes('Max Position')) {
+    // Max Position Size preset
+    if (this.elements.maxPositionPercent) {
       this.elements.maxPositionPercent.value = value;
       AppState.updateAccount({ maxPositionPercent: value });
     }
@@ -426,15 +518,14 @@ const Calculator = {
 
   calculate() {
     const accountSize = Utils.parseNumber(this.elements.accountSize?.value);
-    const riskPercent = Utils.parseNumber(this.elements.riskPercent?.value);
+    const riskPercent = AppState.account.riskPercent || AppState.settings.defaultRiskPercent;
     const entry = Utils.parseNumber(this.elements.entryPrice?.value);
     const stop = Utils.parseNumber(this.elements.stopLoss?.value);
     const target = Utils.parseNumber(this.elements.targetPrice?.value);
     const maxPositionPercent = Utils.parseNumber(this.elements.maxPositionPercent?.value) || AppState.account.maxPositionPercent;
 
     AppState.updateAccount({
-      currentSize: accountSize || AppState.settings.startingAccountSize,
-      riskPercent: riskPercent || AppState.settings.defaultRiskPercent
+      currentSize: accountSize || AppState.settings.startingAccountSize
     });
 
     AppState.updateTrade({
@@ -448,17 +539,12 @@ const Calculator = {
     if (!accountSize || !riskPercent || !entry || !stop) {
       this.setStopError(false);
       this.renderEmptyResults();
-      // Show target warning even with incomplete form
-      if (hasTargetWarning) {
-        this.updateInsights([{ type: 'warning', icon: '⚠️', text: 'Target should be above entry for long trades' }]);
-      }
       return;
     }
 
     if (stop >= entry) {
       this.setStopError(true);
       this.renderEmptyResults();
-      this.updateInsights([{ type: 'danger', icon: '⚠️', text: 'Stop must be below entry for long trades' }]);
       return;
     }
 
@@ -470,6 +556,11 @@ const Calculator = {
     let shares = Math.floor(riskDollars / riskPerShare);
     let positionSize = shares * entry;
     let isLimited = false;
+
+    // Store original values before limiting
+    const originalShares = shares;
+    const originalPositionSize = positionSize;
+    const originalPercentOfAccount = (originalPositionSize / accountSize) * 100;
 
     const maxPosition = accountSize * (maxPositionPercent / 100);
     if (positionSize > maxPosition) {
@@ -494,12 +585,12 @@ const Calculator = {
 
     const results = {
       shares, positionSize, riskDollars: actualRiskDollars, stopDistance,
-      stopPerShare: riskPerShare, rMultiple, target5R, profit, roi, isLimited, percentOfAccount
+      stopPerShare: riskPerShare, rMultiple, target5R, profit, roi, isLimited, percentOfAccount,
+      originalPositionSize, originalPercentOfAccount
     };
 
     AppState.updateResults(results);
     this.renderResults(results);
-    this.renderInsights(entry, stop, target, stopDistance, isLimited);
     this.renderScenarios(accountSize, entry, riskPerShare, maxPositionPercent);
 
     console.log(`🧮 Calculated: ${shares} shares @ $${entry.toFixed(2)}, risk $${actualRiskDollars.toFixed(2)} (${riskPercent}%)`);
@@ -513,14 +604,28 @@ const Calculator = {
       setTimeout(() => card.classList.remove('updated'), 300);
     });
 
-    if (this.elements.positionSize) this.elements.positionSize.textContent = Utils.formatCurrency(r.positionSize);
-    if (this.elements.positionPercent) this.elements.positionPercent.textContent = `${Utils.formatPercent(r.percentOfAccount)} of account`;
+    // Position Size - show strikethrough if limited
+    if (this.elements.positionSize) {
+      if (r.isLimited) {
+        this.elements.positionSize.innerHTML = `<span class="value--struck">${Utils.formatCurrency(r.originalPositionSize)}</span> ${Utils.formatCurrency(r.positionSize)}`;
+      } else {
+        this.elements.positionSize.textContent = Utils.formatCurrency(r.positionSize);
+      }
+    }
+    // % of Account - show strikethrough if limited
+    if (this.elements.positionPercent) {
+      if (r.isLimited) {
+        this.elements.positionPercent.innerHTML = `<span class="value--struck">${Utils.formatPercent(r.originalPercentOfAccount)}%</span> ${Utils.formatPercent(r.percentOfAccount)}% of account`;
+      } else {
+        this.elements.positionPercent.textContent = `${Utils.formatPercent(r.percentOfAccount)} of account`;
+      }
+    }
     if (this.elements.shares) this.elements.shares.textContent = Utils.formatNumber(r.shares);
     if (this.elements.riskAmount) this.elements.riskAmount.textContent = Utils.formatCurrency(r.riskDollars);
     if (this.elements.riskPercentDisplay) this.elements.riskPercentDisplay.textContent = `${Utils.formatPercent(AppState.account.riskPercent)} of account`;
     if (this.elements.stopDistance) this.elements.stopDistance.textContent = Utils.formatPercent(r.stopDistance);
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${Utils.formatCurrency(r.stopPerShare)}/share`;
-    if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = ticker;
+    if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;
 
     if (r.rMultiple !== null) {
       if (this.elements.rMultiple) this.elements.rMultiple.textContent = `${r.rMultiple.toFixed(2)}R`;
@@ -547,50 +652,19 @@ const Calculator = {
       positionSize: '$0.00', positionPercent: '0% of account', shares: '0',
       riskAmount: '$0.00', riskPercentDisplay: '0% of account', stopDistance: '0%',
       stopPerShare: '$0.00/share', rMultiple: '—', target5R: '—',
-      potentialProfit: '—', profitROI: '—', resultsTicker: '—'
+      potentialProfit: '—', profitROI: '—', resultsTicker: 'Ticker: —'
     };
     Object.entries(defaults).forEach(([key, value]) => {
       if (this.elements[key]) this.elements[key].textContent = value;
     });
 
+    // Clear scenarios table
+    if (this.elements.scenariosBody) {
+      this.elements.scenariosBody.innerHTML = '';
+    }
+
     // Deactivate results panel glow
     FocusManager.deactivateResults();
-  },
-
-  renderInsights(entry, stop, target, stopDistance, isLimited) {
-    const insights = [];
-    if (entry && stop) {
-      insights.push({ type: 'neutral', icon: '📉', text: `Stop is ${Utils.formatPercent(stopDistance)} below entry` });
-    }
-    if (target && entry) {
-      const targetDistance = ((target - entry) / entry) * 100;
-      if (target <= entry) {
-        insights.push({ type: 'warning', icon: '⚠️', text: 'Target should be above entry for long trades' });
-      } else {
-        insights.push({ type: 'success', icon: '📈', text: `Target is ${Utils.formatPercent(targetDistance)} above entry` });
-      }
-    }
-    if (isLimited) {
-      insights.push({ type: 'warning', icon: '⚠️', text: `Position limited to ${AppState.account.maxPositionPercent}% of account` });
-    }
-    this.updateInsights(insights);
-  },
-
-  updateInsights(insights) {
-    if (!this.elements.tradeInsights) return;
-    if (!insights.length) {
-      this.elements.tradeInsights.innerHTML = `
-        <div class="insight insight--neutral">
-          <span class="insight__icon">📊</span>
-          <span class="insight__text">Enter entry and stop to see insights</span>
-        </div>`;
-      return;
-    }
-    this.elements.tradeInsights.innerHTML = insights.map(i => `
-      <div class="insight insight--${i.type}">
-        <span class="insight__icon">${i.icon}</span>
-        <span class="insight__text">${i.text}</span>
-      </div>`).join('');
   },
 
   renderScenarios(accountSize, entry, riskPerShare, maxPositionPercent) {
@@ -626,13 +700,15 @@ const Calculator = {
     if (parsed.stop && this.elements.stopLoss) this.elements.stopLoss.value = parsed.stop;
     if (parsed.target && this.elements.targetPrice) this.elements.targetPrice.value = parsed.target;
     if (parsed.riskPercent) {
-      if (this.elements.riskPercent) this.elements.riskPercent.value = parsed.riskPercent;
       AppState.updateAccount({ riskPercent: parsed.riskPercent });
-      const riskCard = this.elements.riskPercent?.closest('.card');
-      if (riskCard) {
-        riskCard.querySelectorAll('.preset-btn').forEach(btn => {
-          btn.classList.toggle('active', parseFloat(btn.dataset.value) === parsed.riskPercent);
-        });
+      // Update risk button active states
+      document.querySelectorAll('.risk-btn').forEach(btn => {
+        btn.classList.toggle('risk-btn--active', parseFloat(btn.dataset.risk) === parsed.riskPercent);
+      });
+      // If not a preset value, show in custom input
+      if (this.elements.customRisk) {
+        const isPreset = [0.1, 0.25, 0.5, 1].includes(parsed.riskPercent);
+        this.elements.customRisk.value = isPreset ? '' : parsed.riskPercent;
       }
     }
     this.calculate();
@@ -733,8 +809,8 @@ const Parser = {
 
       const parts = [];
       if (parsed.ticker) parts.push(parsed.ticker);
-      if (parsed.entry) parts.push(`@ $${parsed.entry}`);
-      if (parsed.stop) parts.push(`SL $${parsed.stop}`);
+      if (parsed.entry) parts.push(`@ $${parseFloat(parsed.entry).toFixed(2)}`);
+      if (parsed.stop) parts.push(`SL $${parseFloat(parsed.stop).toFixed(2)}`);
       if (parsed.riskPercent) parts.push(`${parsed.riskPercent}%`);
 
       this.flashButton('success');
@@ -761,29 +837,32 @@ const Parser = {
     if (!text) return null;
     const result = {};
 
+    // Ticker MUST have $ prefix (e.g., $TSLA, $AXTI)
     const dollarTickerMatch = text.match(/\$([A-Z]{1,5})\b/i);
     if (dollarTickerMatch) {
       result.ticker = dollarTickerMatch[1].toUpperCase();
-    } else {
-      const commonWords = /^(ADDING|ADD|STOP|LOSS|TARGET|RISK|BUY|SELL|LONG|SHORT|PT|TP|SL|THE|FOR|AND|WITH)$/i;
-      const words = text.match(/\b([A-Z]{1,5})\b/g);
-      if (words) {
-        const ticker = words.find(w => !commonWords.test(w) && w === w.toUpperCase());
-        if (ticker) result.ticker = ticker;
-      }
     }
 
+    // Entry price: @ 243.10, adding @ 243, bought @ 243
     const entryMatch = text.match(/(?:@|entry|adding|add|bought?)\s*\$?\s*([\d.]+)/i);
     if (entryMatch) result.entry = parseFloat(entryMatch[1]);
 
+    // Stop loss: sl 237.90, stop 237, stop loss @ 237.90
     const stopMatch = text.match(/(?:sl|stop(?:\s*loss)?)\s*@?\s*\$?\s*([\d.]+)/i);
     if (stopMatch) result.stop = parseFloat(stopMatch[1]);
 
+    // Risk percent: risking 1%, risk 0.5%
     const riskMatch = text.match(/risk(?:ing)?\s*([\d.]+)\s*%/i);
     if (riskMatch) result.riskPercent = parseFloat(riskMatch[1]);
 
+    // Target: target 260, tp 260, pt 260
     const targetMatch = text.match(/(?:target|tp|pt)\s*@?\s*\$?\s*([\d.]+)/i);
     if (targetMatch) result.target = parseFloat(targetMatch[1]);
+
+    // Require at least entry AND stop for a valid alert
+    if (!result.entry || !result.stop) {
+      return null;
+    }
 
     return result;
   },
@@ -795,8 +874,8 @@ const Parser = {
     const resultsPanel = document.querySelector('.panel--results');
     if (!resultsPanel) return;
 
-    // Small delay to let the UI update first
-    requestAnimationFrame(() => {
+    // Delay to let the results panel become visible after FocusManager.activateResults()
+    setTimeout(() => {
       const headerHeight = 60; // Account for fixed header
       const padding = 16; // Extra padding for visual breathing room
       const targetY = resultsPanel.getBoundingClientRect().top + window.scrollY - headerHeight - padding;
@@ -805,7 +884,7 @@ const Parser = {
         top: targetY,
         behavior: 'smooth'
       });
-    });
+    }, 100);
   }
 };
 
@@ -1004,6 +1083,15 @@ const Journal = {
   renderRiskSummary() {
     if (!this.elements.riskSummary) return;
     const openTrades = AppState.getOpenTrades();
+
+    // Show CASH status when no open trades
+    if (openTrades.length === 0) {
+      this.elements.riskSummary.innerHTML = `
+        <span class="risk-summary__label">Status:</span>
+        <span class="risk-summary__indicator risk-summary__indicator--low">CASH</span>`;
+      return;
+    }
+
     const totalRisk = openTrades.reduce((sum, t) => sum + t.riskDollars, 0);
     const riskPercent = (totalRisk / AppState.account.currentSize) * 100;
 
@@ -1012,7 +1100,7 @@ const Journal = {
     else if (riskPercent > 0.5) level = 'medium';
 
     this.elements.riskSummary.innerHTML = `
-      <span class="risk-summary__label">Total Risk:</span>
+      <span class="risk-summary__label">Open Risk:</span>
       <span class="risk-summary__value">${Utils.formatCurrency(totalRisk)}</span>
       <span class="risk-summary__percent">(${Utils.formatPercent(riskPercent)})</span>
       <span class="risk-summary__indicator risk-summary__indicator--${level}">${level.toUpperCase()}</span>`;
@@ -1381,12 +1469,53 @@ const Settings = {
       this.elements.themeBtn.addEventListener('click', () => this.toggleTheme());
     }
     if (this.elements.settingsAccountSize) {
+      const syncAccountSize = (value) => {
+        AppState.updateSettings({ startingAccountSize: value });
+        AppState.updateAccount({ currentSize: value });
+        this.updateSummary();
+        if (this.elements.accountSize) {
+          this.elements.accountSize.value = Utils.formatWithCommas(value);
+        }
+        this.updateAccountDisplay(value);
+        SettingsCard.updateSummary(value, AppState.account.maxPositionPercent);
+        Calculator.calculate();
+      };
+
+      this.elements.settingsAccountSize.addEventListener('input', (e) => {
+        const inputValue = e.target.value.trim();
+
+        // Instant format when K/M notation is used
+        if (inputValue && (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m'))) {
+          const converted = Utils.parseNumber(inputValue);
+          if (converted !== null) {
+            const cursorPosition = e.target.selectionStart;
+            const originalLength = e.target.value.length;
+            e.target.value = Utils.formatWithCommas(converted);
+            const newLength = e.target.value.length;
+            const newCursorPosition = Math.max(0, cursorPosition + (newLength - originalLength));
+            e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+            syncAccountSize(converted);
+          }
+        }
+      });
+
       this.elements.settingsAccountSize.addEventListener('blur', (e) => {
         const value = Utils.parseNumber(e.target.value);
         if (value) {
-          AppState.updateSettings({ startingAccountSize: value });
           e.target.value = Utils.formatWithCommas(value);
-          this.updateSummary();
+          syncAccountSize(value);
+        }
+      });
+
+      this.elements.settingsAccountSize.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const value = Utils.parseNumber(e.target.value);
+          if (value) {
+            e.target.value = Utils.formatWithCommas(value);
+            syncAccountSize(value);
+          }
+          e.target.blur();
         }
       });
     }
@@ -1588,7 +1717,7 @@ const SettingsToggle = {
     this.card.classList.toggle('open');
   },
 
-  updateSummary(accountSize, riskPercent, maxPosition) {
+  updateSummary(accountSize, maxPosition) {
     if (!this.summary) return;
 
     const formatAccount = (val) => {
@@ -1597,7 +1726,7 @@ const SettingsToggle = {
       return `$${val}`;
     };
 
-    this.summary.textContent = `${formatAccount(accountSize)} · ${riskPercent}% · ${maxPosition}%`;
+    this.summary.textContent = `${formatAccount(accountSize)} acc. · Max ${maxPosition}%`;
   }
 };
 
@@ -1635,6 +1764,10 @@ const FocusManager = {
     if (this.resultsGrid) this.resultsGrid.classList.add('hidden');
     if (this.profitTargetsSection) this.profitTargetsSection.classList.add('hidden');
     if (this.scenariosSection) this.scenariosSection.classList.add('hidden');
+    // Disable Save to Journal button when no results
+    if (this.saveBtn) {
+      this.saveBtn.disabled = true;
+    }
   },
 
   showResults() {
@@ -1660,8 +1793,9 @@ const FocusManager = {
     if (this.activatableCards) {
       this.activatableCards.forEach(card => card.classList.add('active'));
     }
-    // Start pulsing Save to Journal button
+    // Enable and pulse Save to Journal button
     if (this.saveBtn) {
+      this.saveBtn.disabled = false;
       this.saveBtn.classList.add('btn--pulse');
     }
   },
@@ -1689,8 +1823,9 @@ const FocusManager = {
     if (this.activatableCards) {
       this.activatableCards.forEach(card => card.classList.remove('active'));
     }
-    // Stop pulsing Save to Journal button
+    // Disable Save to Journal button
     if (this.saveBtn) {
+      this.saveBtn.disabled = true;
       this.saveBtn.classList.remove('btn--pulse');
     }
   }

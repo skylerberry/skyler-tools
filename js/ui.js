@@ -24,7 +24,11 @@ export function showToast(message, type = 'success') {
   toast.className = `toast toast--${type}`;
   toast.innerHTML = `
     <span class="toast__message">${message}</span>
-    <button class="toast__close">×</button>
+    <button class="toast__close" aria-label="Dismiss">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M1 1l8 8M9 1l-8 8"/>
+      </svg>
+    </button>
   `;
 
   // Close button handler

@@ -236,15 +236,23 @@
 .card--collapsible.open .card__body--collapsible {
   max-height: 500px;
   opacity: 1;
+  overflow: visible;
   padding-top: var(--space-5);
   padding-bottom: var(--space-5);
 }
 
-/* Settings card has more content */
+/* Settings card - simple fade animation */
+.card--settings .card__body--collapsible {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease-out, border-color 0.25s ease-out, box-shadow 0.25s ease-out;
+}
+
 .card--settings.open .card__body--collapsible {
-  max-height: 600px;
-  padding-top: var(--space-4);
-  padding-bottom: var(--space-4);
+  opacity: 1;
+  pointer-events: auto;
+  overflow: visible;
+  transition: opacity 0.25s ease-out, border-color 0.25s ease-out, box-shadow 0.25s ease-out;
 }
 
 /* === Scenarios Expand Animation === */

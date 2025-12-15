@@ -43,6 +43,7 @@
 }
 
 .header__logo {
+  font-family: var(--font-display);
   font-size: var(--text-lg);
   font-weight: var(--font-bold);
   color: var(--text-primary);
@@ -117,7 +118,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .panel__content {
@@ -178,8 +179,10 @@
 
 .results-title {
   flex: 1;
-  font-size: var(--text-base);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
   font-weight: var(--font-semibold);
+  letter-spacing: -0.01em;
   line-height: 1.2;
 }
 
@@ -377,11 +380,17 @@
 
   /* Mobile header */
   .header__divider {
-    display: none;
+    margin: 0 var(--space-1);
+    height: 16px;
   }
 
   .header__tool-name {
-    display: none;
+    font-size: var(--text-xs);
+  }
+
+  /* Push actions to right when account is hidden */
+  .header__actions {
+    margin-left: auto;
   }
 }
 

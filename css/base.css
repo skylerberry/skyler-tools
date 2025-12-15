@@ -104,6 +104,11 @@ body {
     border-color 0.35s ease !important;
 }
 
+/* Settings card has custom fade animation */
+.card--settings .card__body--collapsible {
+  transition: opacity 0.25s ease-out, border-color 0.25s ease-out, box-shadow 0.25s ease-out !important;
+}
+
 /* === Typography === */
 
 h1, h2, h3, h4, h5, h6 {

@@ -53,21 +53,13 @@ class AlertParser {
 
     const result = {};
 
-    // Ticker: Prefer $TICKER format (most reliable), then standalone uppercase
+    // Ticker MUST have $ prefix (e.g., $TSLA, $AXTI)
     const dollarTickerMatch = text.match(/\$([A-Z]{1,5})\b/i);
     if (dollarTickerMatch) {
       result.ticker = dollarTickerMatch[1].toUpperCase();
-    } else {
-      // Fallback: look for standalone uppercase ticker (not common words)
-      const commonWords = /^(ADDING|ADD|STOP|LOSS|TARGET|RISK|BUY|SELL|LONG|SHORT|PT|TP|SL|THE|FOR|AND|WITH)$/i;
-      const words = text.match(/\b([A-Z]{1,5})\b/g);
-      if (words) {
-        const ticker = words.find(w => !commonWords.test(w) && w === w.toUpperCase());
-        if (ticker) result.ticker = ticker;
-      }
     }
 
-    // Entry price: @ 243.10, entry 243.10, adding @ 243
+    // Entry price: @ 243.10, adding @ 243, bought @ 243
     const entryMatch = text.match(/(?:@|entry|adding|add|bought?)\s*\$?\s*([\d.]+)/i);
     if (entryMatch) {
       result.entry = parseFloat(entryMatch[1]);
@@ -91,6 +83,11 @@ class AlertParser {
       result.target = parseFloat(targetMatch[1]);
     }
 
+    // Require at least entry AND stop for a valid alert
+    if (!result.entry || !result.stop) {
+      return null;
+    }
+
     return result;
   }
 
@@ -111,8 +108,8 @@ class AlertParser {
     // Build feedback message
     const parts = [];
     if (parsed.ticker) parts.push(parsed.ticker);
-    if (parsed.entry) parts.push(`@ $${parsed.entry}`);
-    if (parsed.stop) parts.push(`SL $${parsed.stop}`);
+    if (parsed.entry) parts.push(`@ $${parseFloat(parsed.entry).toFixed(2)}`);
+    if (parsed.stop) parts.push(`SL $${parseFloat(parsed.stop).toFixed(2)}`);
     if (parsed.riskPercent) parts.push(`${parsed.riskPercent}%`);
 
     // Clear input
@@ -135,8 +132,8 @@ class AlertParser {
     const resultsPanel = document.querySelector('.panel--results');
     if (!resultsPanel) return;
 
-    // Small delay to let the UI update first
-    requestAnimationFrame(() => {
+    // Delay to let the results panel become visible after FocusManager.activateResults()
+    setTimeout(() => {
       const headerHeight = 60; // Account for fixed header
       const padding = 16; // Extra padding for visual breathing room
       const targetY = resultsPanel.getBoundingClientRect().top + window.scrollY - headerHeight - padding;
@@ -145,7 +142,7 @@ class AlertParser {
         top: targetY,
         behavior: 'smooth'
       });
-    });
+    }, 100);
   }
 }
 
