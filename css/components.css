@@ -2625,8 +2625,8 @@
   }
 
   .what-if__body {
-    flex-direction: row;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
     padding: var(--space-2) 0;
   }
@@ -2635,6 +2635,12 @@
     align-items: center;
     text-align: center;
   }
+
+  /* Reorder for 2x2: Per Share, Profit (top), R-Multiple, ROI (bottom) */
+  .what-if__stat:nth-child(1) { order: 3; } /* R-Multiple -> bottom left */
+  .what-if__stat:nth-child(2) { order: 1; } /* Per Share -> top left */
+  .what-if__stat:nth-child(3) { order: 2; } /* Profit -> top right */
+  .what-if__stat:nth-child(4) { order: 4; } /* ROI -> bottom right */
 
   .what-if__stat-value {
     font-size: var(--text-base);
