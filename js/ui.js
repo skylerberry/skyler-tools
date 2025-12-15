@@ -170,7 +170,7 @@ class FocusManager {
     this.activatableCards = null;
     this.welcomeCard = null;
     this.resultsGrid = null;
-    this.profitTargetsSection = null;
+    this.rProgressBar = null;
     this.scenariosSection = null;
     this.saveBtn = null;
     this.isResultsActive = false;
@@ -182,7 +182,7 @@ class FocusManager {
     this.activatableCards = document.querySelectorAll('.result-card--activatable');
     this.welcomeCard = document.getElementById('welcomeCard');
     this.resultsGrid = document.getElementById('resultsGrid');
-    this.profitTargetsSection = document.getElementById('profitTargetsSection');
+    this.rProgressBar = document.getElementById('rProgressBar');
     this.scenariosSection = document.getElementById('scenariosSection');
     this.saveBtn = document.getElementById('logTradeBtn');
 
@@ -193,14 +193,17 @@ class FocusManager {
   showWelcome() {
     if (this.welcomeCard) this.welcomeCard.classList.remove('hidden');
     if (this.resultsGrid) this.resultsGrid.classList.add('hidden');
-    if (this.profitTargetsSection) this.profitTargetsSection.classList.add('hidden');
+    if (this.rProgressBar) {
+      this.rProgressBar.classList.add('hidden');
+      this.rProgressBar.classList.remove('visible');
+    }
     if (this.scenariosSection) this.scenariosSection.classList.add('hidden');
   }
 
   showResults() {
     if (this.welcomeCard) this.welcomeCard.classList.add('hidden');
     if (this.resultsGrid) this.resultsGrid.classList.remove('hidden');
-    if (this.profitTargetsSection) this.profitTargetsSection.classList.remove('hidden');
+    if (this.rProgressBar) this.rProgressBar.classList.remove('hidden');
     if (this.scenariosSection) this.scenariosSection.classList.remove('hidden');
   }
 

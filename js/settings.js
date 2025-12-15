@@ -60,14 +60,55 @@ class Settings {
       this.elements.settingsOverlay.addEventListener('click', () => this.close());
     }
 
-    // Settings account size
+    // Settings account size with K/M instant conversion
     if (this.elements.settingsAccountSize) {
+      const syncAccountSize = (value) => {
+        state.updateSettings({ startingAccountSize: value });
+        state.updateAccount({ currentSize: value });
+        this.updateSummary();
+        // Sync to Quick Settings field
+        if (this.elements.accountSize) {
+          this.elements.accountSize.value = formatWithCommas(value);
+        }
+        this.updateAccountDisplay(value);
+        state.emit('accountSizeChanged', value);
+      };
+
+      this.elements.settingsAccountSize.addEventListener('input', (e) => {
+        const inputValue = e.target.value.trim();
+
+        // Instant format when K/M notation is used
+        if (inputValue && (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m'))) {
+          const converted = parseNumber(inputValue);
+          if (converted !== null) {
+            const cursorPosition = e.target.selectionStart;
+            const originalLength = e.target.value.length;
+            e.target.value = formatWithCommas(converted);
+            const newLength = e.target.value.length;
+            const newCursorPosition = Math.max(0, cursorPosition + (newLength - originalLength));
+            e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+            syncAccountSize(converted);
+          }
+        }
+      });
+
       this.elements.settingsAccountSize.addEventListener('blur', (e) => {
         const value = parseNumber(e.target.value);
         if (value) {
-          state.updateSettings({ startingAccountSize: value });
           e.target.value = formatWithCommas(value);
-          this.updateSummary();
+          syncAccountSize(value);
+        }
+      });
+
+      this.elements.settingsAccountSize.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const value = parseNumber(e.target.value);
+          if (value) {
+            e.target.value = formatWithCommas(value);
+            syncAccountSize(value);
+          }
+          e.target.blur();
         }
       });
     }

@@ -8,6 +8,7 @@ import { parser } from './parser.js';
 import { journal } from './journal.js';
 import { settings } from './settings.js';
 import { theme, keyboard, settingsToggle, focusManager } from './ui.js';
+import { trimModal } from './trimModal.js';
 
 class App {
   constructor() {
@@ -32,6 +33,9 @@ class App {
     // Initialize journal
     journal.init();
 
+    // Initialize trim modal
+    trimModal.init();
+
     // Initialize keyboard shortcuts
     keyboard.init();
 
@@ -40,6 +44,13 @@ class App {
 
     // Initialize focus manager for visual attention flow
     focusManager.init();
+
+    // Sync Quick Settings summary with loaded values
+    settingsToggle.updateSummary(
+      state.account.currentSize,
+      state.settings.riskPercent,
+      state.settings.maxPositionPercent
+    );
 
     // Set up global event listeners
     this.setupGlobalEvents();

@@ -36,9 +36,12 @@ class Calculator {
       stopDistance: document.getElementById('stopDistance'),
       stopPerShare: document.getElementById('stopPerShare'),
       rMultiple: document.getElementById('rMultiple'),
-      target5R: document.getElementById('target5R'),
       potentialProfit: document.getElementById('potentialProfit'),
       profitROI: document.getElementById('profitROI'),
+
+      // What If Section
+      whatIfSection: document.getElementById('whatIfSection'),
+      whatIfTargetPrice: document.getElementById('whatIfTargetPrice'),
       resultsTicker: document.getElementById('resultsTicker'),
       tradeInsights: document.getElementById('tradeInsights'),
 
@@ -48,7 +51,24 @@ class Calculator {
       scenariosBody: document.getElementById('scenariosBody'),
 
       // Clear button
-      clearCalculatorBtn: document.getElementById('clearCalculatorBtn')
+      clearCalculatorBtn: document.getElementById('clearCalculatorBtn'),
+
+      // R-Progress Bar
+      rProgressBar: document.getElementById('rProgressBar'),
+      rProgressFill: document.getElementById('rProgressFill'),
+      rStopPrice: document.getElementById('rStopPrice'),
+      rStopProfit: document.getElementById('rStopProfit'),
+      rEntryPrice: document.getElementById('rEntryPrice'),
+      r1RPrice: document.getElementById('r1RPrice'),
+      r1RProfit: document.getElementById('r1RProfit'),
+      r2RPrice: document.getElementById('r2RPrice'),
+      r2RProfit: document.getElementById('r2RProfit'),
+      r3RPrice: document.getElementById('r3RPrice'),
+      r3RProfit: document.getElementById('r3RProfit'),
+      r4RPrice: document.getElementById('r4RPrice'),
+      r4RProfit: document.getElementById('r4RProfit'),
+      r5RPrice: document.getElementById('r5RPrice'),
+      r5RProfit: document.getElementById('r5RProfit')
     };
   }
 
@@ -60,13 +80,33 @@ class Calculator {
       if (el) el.addEventListener('input', () => this.calculate());
     });
 
-    // Account size with formatting on blur
+    // Account size with K/M instant conversion and formatting
     if (accountSize) {
-      accountSize.addEventListener('input', () => this.calculate());
+      accountSize.addEventListener('input', (e) => {
+        const inputValue = e.target.value.trim();
+
+        // Instant format when K/M notation is used
+        if (inputValue && (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m'))) {
+          const converted = parseNumber(inputValue);
+          if (converted !== null) {
+            const cursorPosition = e.target.selectionStart;
+            const originalLength = e.target.value.length;
+            e.target.value = formatWithCommas(converted);
+            const newLength = e.target.value.length;
+            const newCursorPosition = Math.max(0, cursorPosition + (newLength - originalLength));
+            e.target.setSelectionRange(newCursorPosition, newCursorPosition);
+            // Update state and displays with converted value
+            state.updateAccount({ currentSize: converted });
+            state.emit('accountSizeChanged', converted);
+          }
+        }
+        this.calculate();
+      });
       accountSize.addEventListener('blur', (e) => {
         const num = parseNumber(e.target.value);
         if (num !== null) {
           e.target.value = formatWithCommas(num);
+          state.emit('accountSizeChanged', num);
         }
       });
     }
@@ -248,7 +288,7 @@ class Calculator {
       stopDistance,
       stopPerShare: riskPerShare,
       rMultiple,
-      target5R,
+      target,
       profit,
       roi,
       isLimited,
@@ -261,6 +301,7 @@ class Calculator {
     this.renderResults(results);
     this.renderInsights(entry, stop, target, stopDistance, isLimited);
     this.renderScenarios(accountSize, entry, riskPerShare, maxPositionPercent);
+    this.renderRProgressBar(entry, stop, shares, riskPerShare);
   }
 
   renderResults(r) {
@@ -282,18 +323,18 @@ class Calculator {
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${formatCurrency(r.stopPerShare)}/share`;
     if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;
 
-    // Profit targets
-    if (r.rMultiple !== null) {
+    // What If Section - Progressive Disclosure
+    if (r.rMultiple !== null && r.target) {
+      // Show What If section
+      if (this.elements.whatIfSection) this.elements.whatIfSection.classList.add('visible');
+      if (this.elements.whatIfTargetPrice) this.elements.whatIfTargetPrice.textContent = formatCurrency(r.target);
       if (this.elements.rMultiple) this.elements.rMultiple.textContent = `${r.rMultiple.toFixed(2)}R`;
       if (this.elements.potentialProfit) this.elements.potentialProfit.textContent = formatCurrency(r.profit);
-      if (this.elements.profitROI) this.elements.profitROI.textContent = `${formatPercent(r.roi)} ROI`;
+      if (this.elements.profitROI) this.elements.profitROI.textContent = `${formatPercent(r.roi)}`;
     } else {
-      if (this.elements.rMultiple) this.elements.rMultiple.textContent = '—';
-      if (this.elements.potentialProfit) this.elements.potentialProfit.textContent = '—';
-      if (this.elements.profitROI) this.elements.profitROI.textContent = 'Set target to see';
+      // Hide What If section
+      if (this.elements.whatIfSection) this.elements.whatIfSection.classList.remove('visible');
     }
-
-    if (this.elements.target5R) this.elements.target5R.textContent = formatCurrency(r.target5R);
 
     // Emit for header update
     state.emit('resultsRendered', r);
@@ -308,16 +349,20 @@ class Calculator {
       riskPercentDisplay: '0% of account',
       stopDistance: '0%',
       stopPerShare: '$0.00/share',
-      rMultiple: '—',
-      target5R: '—',
-      potentialProfit: '—',
-      profitROI: '—',
       resultsTicker: 'Ticker: —'
     };
+
+    // Hide What If section
+    if (this.elements.whatIfSection) this.elements.whatIfSection.classList.remove('visible');
 
     Object.entries(defaults).forEach(([key, value]) => {
       if (this.elements[key]) this.elements[key].textContent = value;
     });
+
+    // Hide R-progress bar
+    if (this.elements.rProgressBar) {
+      this.elements.rProgressBar.classList.remove('visible');
+    }
   }
 
   renderInsights(entry, stop, target, stopDistance, isLimited) {
@@ -434,6 +479,52 @@ class Calculator {
     }
 
     this.calculate();
+  }
+
+  // R-Progress Bar rendering
+  renderRProgressBar(entry, stop, shares, riskPerShare) {
+    const bar = this.elements.rProgressBar;
+    if (!bar) return;
+
+    // Only show for valid long positions (entry > stop)
+    if (!entry || !stop || stop >= entry || shares <= 0) {
+      bar.classList.remove('visible');
+      return;
+    }
+
+    // Calculate all R-multiple levels
+    const levels = {
+      stop: { price: stop, profit: -(riskPerShare * shares) },
+      entry: { price: entry, profit: 0 },
+      r1: { price: entry + (1 * riskPerShare), profit: 1 * riskPerShare * shares },
+      r2: { price: entry + (2 * riskPerShare), profit: 2 * riskPerShare * shares },
+      r3: { price: entry + (3 * riskPerShare), profit: 3 * riskPerShare * shares },
+      r4: { price: entry + (4 * riskPerShare), profit: 4 * riskPerShare * shares },
+      r5: { price: entry + (5 * riskPerShare), profit: 5 * riskPerShare * shares }
+    };
+
+    // Update DOM elements
+    if (this.elements.rStopPrice) this.elements.rStopPrice.textContent = formatCurrency(levels.stop.price);
+    if (this.elements.rStopProfit) this.elements.rStopProfit.textContent = formatCurrency(levels.stop.profit);
+    if (this.elements.rEntryPrice) this.elements.rEntryPrice.textContent = formatCurrency(levels.entry.price);
+
+    if (this.elements.r1RPrice) this.elements.r1RPrice.textContent = formatCurrency(levels.r1.price);
+    if (this.elements.r1RProfit) this.elements.r1RProfit.textContent = `+${formatCurrency(levels.r1.profit)}`;
+
+    if (this.elements.r2RPrice) this.elements.r2RPrice.textContent = formatCurrency(levels.r2.price);
+    if (this.elements.r2RProfit) this.elements.r2RProfit.textContent = `+${formatCurrency(levels.r2.profit)}`;
+
+    if (this.elements.r3RPrice) this.elements.r3RPrice.textContent = formatCurrency(levels.r3.price);
+    if (this.elements.r3RProfit) this.elements.r3RProfit.textContent = `+${formatCurrency(levels.r3.profit)}`;
+
+    if (this.elements.r4RPrice) this.elements.r4RPrice.textContent = formatCurrency(levels.r4.price);
+    if (this.elements.r4RProfit) this.elements.r4RProfit.textContent = `+${formatCurrency(levels.r4.profit)}`;
+
+    if (this.elements.r5RPrice) this.elements.r5RPrice.textContent = formatCurrency(levels.r5.price);
+    if (this.elements.r5RProfit) this.elements.r5RProfit.textContent = `+${formatCurrency(levels.r5.profit)}`;
+
+    // Show the progress bar with animation
+    bar.classList.add('visible');
   }
 
   // Validation helpers

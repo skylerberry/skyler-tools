@@ -5,6 +5,7 @@
 import { state } from './state.js';
 import { formatCurrency, formatPercent, formatDate } from './utils.js';
 import { showToast } from './ui.js';
+import { trimModal } from './trimModal.js';
 
 class Journal {
   constructor() {
@@ -111,43 +112,8 @@ class Journal {
   }
 
   closeTrade(id) {
-    const entry = state.journal.entries.find(e => e.id === id);
-    if (!entry) return;
-
-    const exitPrice = prompt(`Enter exit price for ${entry.ticker}:`);
-    if (!exitPrice) return;
-
-    const exit = parseFloat(exitPrice);
-    if (isNaN(exit)) {
-      showToast('Invalid price', 'error');
-      return;
-    }
-
-    const pnl = (exit - entry.entry) * entry.shares;
-
-    state.updateJournalEntry(id, {
-      exitPrice: exit,
-      exitDate: new Date().toISOString(),
-      pnl,
-      status: 'closed'
-    });
-
-    // Update realized P&L
-    state.updateAccount({
-      realizedPnL: state.account.realizedPnL + pnl
-    });
-
-    // Update account if dynamic tracking enabled
-    if (state.settings.dynamicAccountEnabled) {
-      const newSize = state.settings.startingAccountSize + state.account.realizedPnL;
-      state.updateAccount({ currentSize: newSize });
-      state.emit('accountSizeChanged', newSize);
-    }
-
-    showToast(
-      `${entry.ticker} closed: ${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}`,
-      pnl >= 0 ? 'success' : 'warning'
-    );
+    // Open trim modal instead of browser prompt
+    trimModal.open(id);
   }
 
   deleteTrade(id) {
@@ -165,15 +131,16 @@ class Journal {
   }
 
   renderActiveTrades() {
-    const openTrades = state.getOpenTrades();
+    // Include both open and trimmed trades (they still have positions)
+    const activeTrades = state.journal.entries.filter(e => e.status === 'open' || e.status === 'trimmed');
 
     if (this.elements.activeTradeCount) {
-      this.elements.activeTradeCount.textContent = `${openTrades.length} open`;
+      this.elements.activeTradeCount.textContent = `${activeTrades.length} active`;
     }
 
     if (!this.elements.activeTrades) return;
 
-    if (openTrades.length === 0) {
+    if (activeTrades.length === 0) {
       this.elements.activeTrades.innerHTML = `
         <div class="empty-state">
           <span class="empty-state__icon">🧘</span>
@@ -184,45 +151,60 @@ class Journal {
       return;
     }
 
-    this.elements.activeTrades.innerHTML = openTrades.slice(0, 5).map(trade => `
-      <div class="trade-card" data-id="${trade.id}">
-        <div class="trade-card__header">
-          <span class="trade-card__ticker">${trade.ticker}</span>
-          <span class="trade-card__shares">${trade.shares} shares</span>
+    this.elements.activeTrades.innerHTML = activeTrades.slice(0, 5).map(trade => {
+      const shares = trade.remainingShares ?? trade.shares;
+      const riskPerShare = trade.entry - trade.stop;
+      const currentRisk = shares * riskPerShare;
+      const isTrimmed = trade.status === 'trimmed';
+      const realizedPnL = trade.totalRealizedPnL || 0;
+
+      return `
+        <div class="trade-card" data-id="${trade.id}">
+          <div class="trade-card__header">
+            <span class="trade-card__ticker">${trade.ticker}</span>
+            <span class="trade-card__shares">${shares} shares${isTrimmed ? ` (${trade.originalShares} orig)` : ''}</span>
+          </div>
+          <div class="trade-card__details">
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Entry</span>
+              <span class="trade-card__value">${formatCurrency(trade.entry)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Stop</span>
+              <span class="trade-card__value">${formatCurrency(trade.stop)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Risk</span>
+              <span class="trade-card__value">${formatCurrency(currentRisk)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Status</span>
+              <span class="status-badge status-badge--${trade.status}">${isTrimmed ? 'Trimmed' : 'Open'}</span>
+            </div>
+            ${isTrimmed ? `
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Realized</span>
+              <span class="trade-card__value ${realizedPnL >= 0 ? 'text-success' : 'text-danger'}">${realizedPnL >= 0 ? '+' : ''}${formatCurrency(realizedPnL)}</span>
+            </div>
+            ` : ''}
+          </div>
+          <div class="trade-card__actions">
+            <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">${isTrimmed ? 'Trim More' : 'Close'}</button>
+            <button class="btn btn--sm btn--ghost" onclick="deleteTrade(${trade.id})">Delete</button>
+          </div>
         </div>
-        <div class="trade-card__details">
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Entry</span>
-            <span class="trade-card__value">${formatCurrency(trade.entry)}</span>
-          </div>
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Stop</span>
-            <span class="trade-card__value">${formatCurrency(trade.stop)}</span>
-          </div>
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Risk</span>
-            <span class="trade-card__value">${formatCurrency(trade.riskDollars)}</span>
-          </div>
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Status</span>
-            <span class="status-badge status-badge--open">Open</span>
-          </div>
-        </div>
-        <div class="trade-card__actions">
-          <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">Close</button>
-          <button class="btn btn--sm btn--ghost" onclick="deleteTrade(${trade.id})">Delete</button>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 
   renderRiskSummary() {
     if (!this.elements.riskSummary) return;
 
-    const openTrades = state.getOpenTrades();
+    // Include both open and trimmed trades (they still have positions at risk)
+    const activeTrades = state.journal.entries.filter(e => e.status === 'open' || e.status === 'trimmed');
 
-    // Show CASH status when no open trades
-    if (openTrades.length === 0) {
+    // Show CASH status when no active trades
+    if (activeTrades.length === 0) {
       this.elements.riskSummary.innerHTML = `
         <span class="risk-summary__label">Status:</span>
         <span class="risk-summary__indicator risk-summary__indicator--low">CASH</span>
@@ -230,7 +212,12 @@ class Journal {
       return;
     }
 
-    const totalRisk = openTrades.reduce((sum, t) => sum + t.riskDollars, 0);
+    // Calculate risk based on remaining shares
+    const totalRisk = activeTrades.reduce((sum, t) => {
+      const shares = t.remainingShares ?? t.shares;
+      const riskPerShare = t.entry - t.stop;
+      return sum + (shares * riskPerShare);
+    }, 0);
     const riskPercent = (totalRisk / state.account.currentSize) * 100;
 
     let level = 'low';
@@ -238,7 +225,7 @@ class Journal {
     else if (riskPercent > 0.5) level = 'medium';
 
     this.elements.riskSummary.innerHTML = `
-      <span class="risk-summary__label">Total Risk:</span>
+      <span class="risk-summary__label">Open Risk:</span>
       <span class="risk-summary__value">${formatCurrency(totalRisk)}</span>
       <span class="risk-summary__percent">(${formatPercent(riskPercent)})</span>
       <span class="risk-summary__indicator risk-summary__indicator--${level}">${level.toUpperCase()}</span>
@@ -279,9 +266,19 @@ class Journal {
 
     this.elements.journalTableBody.innerHTML = trades.map(trade => {
       const date = formatDate(trade.timestamp);
-      const pnlDisplay = trade.pnl !== null
-        ? `<span class="${trade.pnl >= 0 ? 'text-success' : 'text-danger'}">${trade.pnl >= 0 ? '+' : ''}${formatCurrency(trade.pnl)}</span>`
+      const isTrimmed = trade.status === 'trimmed';
+      const isClosed = trade.status === 'closed';
+
+      // Use totalRealizedPnL for trimmed/closed trades, fallback to pnl for legacy
+      const pnlValue = trade.totalRealizedPnL ?? trade.pnl;
+      const pnlDisplay = pnlValue !== null && pnlValue !== undefined
+        ? `<span class="${pnlValue >= 0 ? 'text-success' : 'text-danger'}">${pnlValue >= 0 ? '+' : ''}${formatCurrency(pnlValue)}</span>`
         : '—';
+
+      // Show remaining shares for trimmed trades
+      const sharesDisplay = isTrimmed
+        ? `${trade.remainingShares}/${trade.originalShares}`
+        : trade.shares;
 
       return `
         <tr data-id="${trade.id}">
@@ -289,7 +286,7 @@ class Journal {
           <td>${trade.ticker}</td>
           <td>${formatCurrency(trade.entry)}</td>
           <td>${formatCurrency(trade.stop)}</td>
-          <td>${trade.shares}</td>
+          <td>${sharesDisplay}</td>
           <td>${formatCurrency(trade.riskDollars)}</td>
           <td><span class="status-badge status-badge--${trade.status}">${trade.status}</span></td>
           <td>${pnlDisplay}</td>
@@ -300,15 +297,18 @@ class Journal {
       `;
     }).join('');
 
-    // Summary
-    const wins = trades.filter(t => t.pnl > 0).length;
-    const losses = trades.filter(t => t.pnl < 0).length;
+    // Summary - use totalRealizedPnL for accurate counting
+    const getPnL = (t) => t.totalRealizedPnL ?? t.pnl ?? 0;
+    const wins = trades.filter(t => getPnL(t) > 0).length;
+    const losses = trades.filter(t => getPnL(t) < 0).length;
     const open = trades.filter(t => t.status === 'open').length;
-    const totalPnL = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+    const trimmed = trades.filter(t => t.status === 'trimmed').length;
+    const totalPnL = trades.reduce((sum, t) => sum + getPnL(t), 0);
 
     if (this.elements.journalSummaryText) {
+      const activeCount = open + trimmed;
       this.elements.journalSummaryText.textContent =
-        `${trades.length} trades | ${wins}W-${losses}L-${open}O | ${totalPnL >= 0 ? '+' : ''}${formatCurrency(totalPnL)}`;
+        `${trades.length} trades | ${wins}W-${losses}L-${activeCount}A | ${totalPnL >= 0 ? '+' : ''}${formatCurrency(totalPnL)}`;
     }
   }
 }

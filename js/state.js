@@ -6,7 +6,7 @@ class AppState {
   constructor() {
     this.state = {
       settings: {
-        startingAccountSize: 50000,
+        startingAccountSize: 10000,
         defaultRiskPercent: 1,
         defaultMaxPositionPercent: 100,
         dynamicAccountEnabled: true,
@@ -14,7 +14,7 @@ class AppState {
       },
 
       account: {
-        currentSize: 50000,
+        currentSize: 10000,
         realizedPnL: 0,
         riskPercent: 1,
         maxPositionPercent: 100
@@ -200,10 +200,11 @@ class AppState {
       if (saved) {
         this.state.journal.entries = JSON.parse(saved);
 
-        // Calculate realized P&L from closed trades
+        // Calculate realized P&L from closed and trimmed trades
+        // Use totalRealizedPnL for trades with trim history, fallback to pnl for legacy
         this.state.account.realizedPnL = this.state.journal.entries
-          .filter(t => t.status === 'closed' && t.pnl !== null)
-          .reduce((sum, t) => sum + t.pnl, 0);
+          .filter(t => (t.status === 'closed' || t.status === 'trimmed'))
+          .reduce((sum, t) => sum + (t.totalRealizedPnL ?? t.pnl ?? 0), 0);
 
         if (this.state.settings.dynamicAccountEnabled) {
           this.state.account.currentSize =

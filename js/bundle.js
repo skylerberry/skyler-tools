@@ -233,9 +233,11 @@ const AppState = {
       const saved = localStorage.getItem('riskCalcJournal');
       if (saved) {
         this.state.journal.entries = JSON.parse(saved);
+        // Calculate realized P&L from closed and trimmed trades
+        // Use totalRealizedPnL for trades with trim history, fallback to pnl for legacy
         this.state.account.realizedPnL = this.state.journal.entries
-          .filter(t => t.status === 'closed' && t.pnl !== null)
-          .reduce((sum, t) => sum + t.pnl, 0);
+          .filter(t => (t.status === 'closed' || t.status === 'trimmed'))
+          .reduce((sum, t) => sum + (t.totalRealizedPnL ?? t.pnl ?? 0), 0);
 
         if (this.state.settings.dynamicAccountEnabled) {
           this.state.account.currentSize =
@@ -369,15 +371,34 @@ const Calculator = {
       stopDistance: document.getElementById('stopDistance'),
       stopPerShare: document.getElementById('stopPerShare'),
       rMultiple: document.getElementById('rMultiple'),
-      target5R: document.getElementById('target5R'),
+      profitPerShare: document.getElementById('profitPerShare'),
       potentialProfit: document.getElementById('potentialProfit'),
       profitROI: document.getElementById('profitROI'),
+      // What If Section
+      whatIfSection: document.getElementById('whatIfSection'),
+      whatIfTargetPrice: document.getElementById('whatIfTargetPrice'),
       resultsTicker: document.getElementById('resultsTicker'),
       customRisk: document.getElementById('customRisk'),
       scenariosToggle: document.getElementById('scenariosToggle'),
       scenariosContent: document.getElementById('scenariosContent'),
       scenariosBody: document.getElementById('scenariosBody'),
-      clearCalculatorBtn: document.getElementById('clearCalculatorBtn')
+      clearCalculatorBtn: document.getElementById('clearCalculatorBtn'),
+      // R-Progress Bar
+      rProgressBar: document.getElementById('rProgressBar'),
+      rProgressFill: document.getElementById('rProgressFill'),
+      rStopPrice: document.getElementById('rStopPrice'),
+      rStopProfit: document.getElementById('rStopProfit'),
+      rEntryPrice: document.getElementById('rEntryPrice'),
+      r1RPrice: document.getElementById('r1RPrice'),
+      r1RProfit: document.getElementById('r1RProfit'),
+      r2RPrice: document.getElementById('r2RPrice'),
+      r2RProfit: document.getElementById('r2RProfit'),
+      r3RPrice: document.getElementById('r3RPrice'),
+      r3RProfit: document.getElementById('r3RProfit'),
+      r4RPrice: document.getElementById('r4RPrice'),
+      r4RProfit: document.getElementById('r4RProfit'),
+      r5RPrice: document.getElementById('r5RPrice'),
+      r5RProfit: document.getElementById('r5RProfit')
     };
   },
 
@@ -409,6 +430,31 @@ const Calculator = {
       }
     });
 
+    // Input validation: Ticker only A-Z, prices only numbers
+    if (this.elements.ticker) {
+      this.elements.ticker.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^A-Za-z]/g, '').toUpperCase();
+      });
+    }
+
+    const priceFields = ['entryPrice', 'stopLoss', 'targetPrice'];
+    priceFields.forEach(id => {
+      const el = this.elements[id];
+      if (el) {
+        el.addEventListener('input', (e) => {
+          // Allow only digits and one decimal point
+          let value = e.target.value;
+          value = value.replace(/[^\d.]/g, '');
+          // Ensure only one decimal point
+          const parts = value.split('.');
+          if (parts.length > 2) {
+            value = parts[0] + '.' + parts.slice(1).join('');
+          }
+          e.target.value = value;
+        });
+      }
+    });
+
     if (this.elements.accountSize) {
       this.elements.accountSize.addEventListener('input', (e) => {
         const inputValue = e.target.value.trim();
@@ -423,7 +469,10 @@ const Calculator = {
             const newLength = e.target.value.length;
             const newCursorPosition = Math.max(0, cursorPosition + (newLength - originalLength));
             e.target.setSelectionRange(newCursorPosition, newCursorPosition);
-            SettingsCard.updateSummary(converted, AppState.account.maxPositionPercent);
+            // Update all displays with the converted value
+            SettingsToggle.updateSummary(converted, AppState.account.maxPositionPercent);
+            Settings.updateAccountDisplay(converted);
+            AppState.updateAccount({ currentSize: converted });
           }
         }
         this.calculate();
@@ -432,7 +481,8 @@ const Calculator = {
         const num = Utils.parseNumber(e.target.value);
         if (num !== null) {
           e.target.value = Utils.formatWithCommas(num);
-          SettingsCard.updateSummary(num, AppState.account.maxPositionPercent);
+          SettingsToggle.updateSummary(num, AppState.account.maxPositionPercent);
+          Settings.updateAccountDisplay(num);
         }
       });
     }
@@ -624,25 +674,24 @@ const Calculator = {
     const stopDistance = (riskPerShare / entry) * 100;
     const percentOfAccount = (positionSize / accountSize) * 100;
 
-    let rMultiple = null, profit = null, roi = null;
-    if (target && target > entry) {
-      const profitPerShare = target - entry;
-      rMultiple = profitPerShare / riskPerShare;
-      profit = shares * profitPerShare;
-      roi = (profitPerShare / entry) * 100;
+    let rMultiple = null, profit = null, roi = null, targetProfitPerShare = null;
+    if (target && target !== entry) {
+      targetProfitPerShare = target - entry;
+      rMultiple = targetProfitPerShare / riskPerShare;
+      profit = shares * targetProfitPerShare;
+      roi = (targetProfitPerShare / entry) * 100;
     }
-
-    const target5R = entry + (5 * riskPerShare);
 
     const results = {
       shares, positionSize, riskDollars: actualRiskDollars, stopDistance,
-      stopPerShare: riskPerShare, rMultiple, target5R, profit, roi, isLimited, percentOfAccount,
+      stopPerShare: riskPerShare, rMultiple, target, profit, roi, targetProfitPerShare, isLimited, percentOfAccount,
       originalPositionSize, originalPercentOfAccount
     };
 
     AppState.updateResults(results);
     this.renderResults(results);
     this.renderScenarios(accountSize, entry, riskPerShare, maxPositionPercent);
+    this.renderRProgressBar(entry, stop, shares, riskPerShare);
 
     console.log(`🧮 Calculated: ${shares} shares @ $${entry.toFixed(2)}, risk $${actualRiskDollars.toFixed(2)} (${riskPercent}%)`);
   },
@@ -678,17 +727,38 @@ const Calculator = {
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${Utils.formatCurrency(r.stopPerShare)}/share`;
     if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;
 
-    if (r.rMultiple !== null) {
-      if (this.elements.rMultiple) this.elements.rMultiple.textContent = `${r.rMultiple.toFixed(2)}R`;
-      if (this.elements.potentialProfit) this.elements.potentialProfit.textContent = Utils.formatCurrency(r.profit);
-      if (this.elements.profitROI) this.elements.profitROI.textContent = `${Utils.formatPercent(r.roi)} ROI`;
-    } else {
-      if (this.elements.rMultiple) this.elements.rMultiple.textContent = '—';
-      if (this.elements.potentialProfit) this.elements.potentialProfit.textContent = '—';
-      if (this.elements.profitROI) this.elements.profitROI.textContent = 'Set target to see';
-    }
+    // What If Section - Progressive Disclosure (profit or loss scenarios)
+    if (r.rMultiple !== null && r.target) {
+      const isProfit = r.profit >= 0;
+      const colorClass = isProfit ? 'text-success' : 'text-danger';
+      const sign = isProfit ? '+' : '-';
 
-    if (this.elements.target5R) this.elements.target5R.textContent = Utils.formatCurrency(r.target5R);
+      // Show What If section
+      if (this.elements.whatIfSection) this.elements.whatIfSection.classList.add('visible');
+      if (this.elements.whatIfTargetPrice) {
+        this.elements.whatIfTargetPrice.textContent = Utils.formatCurrency(r.target);
+        this.elements.whatIfTargetPrice.className = `what-if__target-price ${colorClass}`;
+      }
+      if (this.elements.rMultiple) {
+        this.elements.rMultiple.textContent = `${sign}${Math.abs(r.rMultiple).toFixed(2)}R`;
+        this.elements.rMultiple.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.profitPerShare) {
+        this.elements.profitPerShare.textContent = `${sign}${Utils.formatCurrency(Math.abs(r.targetProfitPerShare))}/sh`;
+        this.elements.profitPerShare.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.potentialProfit) {
+        this.elements.potentialProfit.textContent = `${sign}${Utils.formatCurrency(Math.abs(r.profit))}`;
+        this.elements.potentialProfit.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.profitROI) {
+        this.elements.profitROI.textContent = `${sign}${Utils.formatPercent(Math.abs(r.roi))}`;
+        this.elements.profitROI.className = `what-if__stat-value ${colorClass}`;
+      }
+    } else {
+      // Hide What If section
+      if (this.elements.whatIfSection) this.elements.whatIfSection.classList.remove('visible');
+    }
 
     Settings.updateAccountDisplay(AppState.account.currentSize);
 
@@ -702,16 +772,23 @@ const Calculator = {
     const defaults = {
       positionSize: '$0.00', positionPercent: '0% of account', shares: '0',
       riskAmount: '$0.00', riskPercentDisplay: '0% of account', stopDistance: '0%',
-      stopPerShare: '$0.00/share', rMultiple: '—', target5R: '—',
-      potentialProfit: '—', profitROI: '—', resultsTicker: 'Ticker: —'
+      stopPerShare: '$0.00/share', resultsTicker: 'Ticker: —'
     };
     Object.entries(defaults).forEach(([key, value]) => {
       if (this.elements[key]) this.elements[key].textContent = value;
     });
 
+    // Hide What If section
+    if (this.elements.whatIfSection) this.elements.whatIfSection.classList.remove('visible');
+
     // Clear scenarios table
     if (this.elements.scenariosBody) {
       this.elements.scenariosBody.innerHTML = '';
+    }
+
+    // Hide R-progress bar
+    if (this.elements.rProgressBar) {
+      this.elements.rProgressBar.classList.remove('visible');
     }
 
     // Deactivate results panel glow
@@ -743,6 +820,52 @@ const Calculator = {
     }).join('');
 
     this.elements.scenariosBody.innerHTML = rows;
+  },
+
+  // R-Progress Bar rendering
+  renderRProgressBar(entry, stop, shares, riskPerShare) {
+    const bar = this.elements.rProgressBar;
+    if (!bar) return;
+
+    // Only show for valid long positions (entry > stop)
+    if (!entry || !stop || stop >= entry || shares <= 0) {
+      bar.classList.remove('visible');
+      return;
+    }
+
+    // Calculate all R-multiple levels
+    const levels = {
+      stop: { price: stop, profit: -(riskPerShare * shares) },
+      entry: { price: entry, profit: 0 },
+      r1: { price: entry + (1 * riskPerShare), profit: 1 * riskPerShare * shares },
+      r2: { price: entry + (2 * riskPerShare), profit: 2 * riskPerShare * shares },
+      r3: { price: entry + (3 * riskPerShare), profit: 3 * riskPerShare * shares },
+      r4: { price: entry + (4 * riskPerShare), profit: 4 * riskPerShare * shares },
+      r5: { price: entry + (5 * riskPerShare), profit: 5 * riskPerShare * shares }
+    };
+
+    // Update DOM elements
+    if (this.elements.rStopPrice) this.elements.rStopPrice.textContent = Utils.formatCurrency(levels.stop.price);
+    if (this.elements.rStopProfit) this.elements.rStopProfit.textContent = Utils.formatCurrency(levels.stop.profit);
+    if (this.elements.rEntryPrice) this.elements.rEntryPrice.textContent = Utils.formatCurrency(levels.entry.price);
+
+    if (this.elements.r1RPrice) this.elements.r1RPrice.textContent = Utils.formatCurrency(levels.r1.price);
+    if (this.elements.r1RProfit) this.elements.r1RProfit.textContent = `+${Utils.formatCurrency(levels.r1.profit)}`;
+
+    if (this.elements.r2RPrice) this.elements.r2RPrice.textContent = Utils.formatCurrency(levels.r2.price);
+    if (this.elements.r2RProfit) this.elements.r2RProfit.textContent = `+${Utils.formatCurrency(levels.r2.profit)}`;
+
+    if (this.elements.r3RPrice) this.elements.r3RPrice.textContent = Utils.formatCurrency(levels.r3.price);
+    if (this.elements.r3RProfit) this.elements.r3RProfit.textContent = `+${Utils.formatCurrency(levels.r3.profit)}`;
+
+    if (this.elements.r4RPrice) this.elements.r4RPrice.textContent = Utils.formatCurrency(levels.r4.price);
+    if (this.elements.r4RProfit) this.elements.r4RProfit.textContent = `+${Utils.formatCurrency(levels.r4.profit)}`;
+
+    if (this.elements.r5RPrice) this.elements.r5RPrice.textContent = Utils.formatCurrency(levels.r5.price);
+    if (this.elements.r5RProfit) this.elements.r5RProfit.textContent = `+${Utils.formatCurrency(levels.r5.profit)}`;
+
+    // Show the progress bar with animation
+    bar.classList.add('visible');
   },
 
   fillFromParsed(parsed) {
@@ -940,6 +1063,297 @@ const Parser = {
 };
 
 // ============================================
+// Trim Modal
+// ============================================
+
+const TrimModal = {
+  elements: {},
+  currentTrade: null,
+  selectedR: 5,
+  selectedTrimPercent: 100,
+
+  init() {
+    this.cacheElements();
+    this.bindEvents();
+  },
+
+  cacheElements() {
+    this.elements = {
+      modal: document.getElementById('trimModal'),
+      overlay: document.getElementById('trimModalOverlay'),
+      closeBtn: document.getElementById('closeTrimModalBtn'),
+      cancelBtn: document.getElementById('cancelTrimBtn'),
+      confirmBtn: document.getElementById('confirmTrimBtn'),
+      ticker: document.getElementById('trimModalTicker'),
+      entryPrice: document.getElementById('trimEntryPrice'),
+      stopLoss: document.getElementById('trimStopLoss'),
+      riskPerShare: document.getElementById('trimRiskPerShare'),
+      remainingShares: document.getElementById('trimRemainingShares'),
+      exitPrice: document.getElementById('trimExitPrice'),
+      rDisplay: document.getElementById('trimRDisplay'),
+      customTrimPercent: document.getElementById('customTrimPercent'),
+      dateInput: document.getElementById('trimDate'),
+      sharesClosing: document.getElementById('trimSharesClosing'),
+      sharesRemaining: document.getElementById('trimSharesRemaining'),
+      profitPerShare: document.getElementById('trimProfitPerShare'),
+      totalPnL: document.getElementById('trimTotalPnL'),
+      preview: document.getElementById('trimPreview')
+    };
+  },
+
+  bindEvents() {
+    this.elements.closeBtn?.addEventListener('click', () => this.close());
+    this.elements.cancelBtn?.addEventListener('click', () => this.close());
+    this.elements.overlay?.addEventListener('click', () => this.close());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isOpen()) this.close();
+    });
+
+    this.elements.modal?.querySelectorAll('[data-r]').forEach(btn => {
+      btn.addEventListener('click', (e) => this.selectR(e));
+    });
+
+    this.elements.modal?.querySelectorAll('[data-trim]').forEach(btn => {
+      btn.addEventListener('click', (e) => this.selectTrimPercent(e));
+    });
+
+    this.elements.customTrimPercent?.addEventListener('input', () => this.handleCustomTrimPercent());
+    this.elements.exitPrice?.addEventListener('input', () => this.handleManualExitPrice());
+    this.elements.confirmBtn?.addEventListener('click', () => this.confirm());
+  },
+
+  setDefaultDate() {
+    if (this.elements.dateInput) {
+      this.elements.dateInput.value = new Date().toISOString().split('T')[0];
+    }
+  },
+
+  open(tradeId) {
+    const trade = AppState.journal.entries.find(e => e.id === tradeId);
+    if (!trade) {
+      UI.showToast('Trade not found', 'error');
+      return;
+    }
+
+    this.currentTrade = trade;
+
+    if (trade.originalShares === undefined || trade.originalShares === null) {
+      trade.originalShares = trade.shares;
+      trade.remainingShares = trade.shares;
+      trade.trimHistory = [];
+      trade.totalRealizedPnL = 0;
+    }
+
+    this.populateTradeData(trade);
+    this.selectedR = 5;
+    this.selectedTrimPercent = 100;
+    this.setDefaultDate();
+
+    this.elements.modal?.querySelectorAll('[data-r]').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.r) === this.selectedR);
+    });
+    this.elements.modal?.querySelectorAll('[data-trim]').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.trim) === this.selectedTrimPercent);
+    });
+
+    if (this.elements.customTrimPercent) this.elements.customTrimPercent.value = '';
+
+    this.calculateExitPrice();
+    this.calculatePreview();
+
+    this.elements.modal?.classList.add('open');
+    this.elements.overlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    this.elements.modal?.classList.remove('open');
+    this.elements.overlay?.classList.remove('open');
+    document.body.style.overflow = '';
+    this.currentTrade = null;
+  },
+
+  isOpen() {
+    return this.elements.modal?.classList.contains('open') ?? false;
+  },
+
+  populateTradeData(trade) {
+    const remainingShares = trade.remainingShares ?? trade.shares;
+    const riskPerShare = trade.entry - trade.stop;
+
+    if (this.elements.ticker) this.elements.ticker.textContent = trade.ticker;
+    if (this.elements.entryPrice) this.elements.entryPrice.textContent = Utils.formatCurrency(trade.entry);
+    if (this.elements.stopLoss) this.elements.stopLoss.textContent = Utils.formatCurrency(trade.stop);
+    if (this.elements.riskPerShare) this.elements.riskPerShare.textContent = Utils.formatCurrency(riskPerShare);
+    if (this.elements.remainingShares) this.elements.remainingShares.textContent = Utils.formatNumber(remainingShares);
+  },
+
+  selectR(e) {
+    const btn = e.target.closest('[data-r]');
+    if (!btn) return;
+
+    this.selectedR = parseInt(btn.dataset.r);
+    this.elements.modal?.querySelectorAll('[data-r]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    this.calculateExitPrice();
+    this.calculatePreview();
+  },
+
+  selectTrimPercent(e) {
+    const btn = e.target.closest('[data-trim]');
+    if (!btn) return;
+
+    this.selectedTrimPercent = parseInt(btn.dataset.trim);
+    this.elements.modal?.querySelectorAll('[data-trim]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    if (this.elements.customTrimPercent) this.elements.customTrimPercent.value = '';
+    this.calculatePreview();
+  },
+
+  handleCustomTrimPercent() {
+    const value = parseFloat(this.elements.customTrimPercent?.value);
+    if (!isNaN(value) && value > 0 && value <= 100) {
+      this.selectedTrimPercent = value;
+      this.elements.modal?.querySelectorAll('[data-trim]').forEach(b => b.classList.remove('active'));
+      this.calculatePreview();
+    }
+  },
+
+  handleManualExitPrice() {
+    const exitPrice = parseFloat(this.elements.exitPrice?.value);
+    if (!this.currentTrade || isNaN(exitPrice)) return;
+
+    const riskPerShare = this.currentTrade.entry - this.currentTrade.stop;
+    const rMultiple = riskPerShare !== 0 ? (exitPrice - this.currentTrade.entry) / riskPerShare : 0;
+
+    if (this.elements.rDisplay) {
+      this.elements.rDisplay.textContent = `(${rMultiple.toFixed(1)}R)`;
+      this.elements.rDisplay.classList.toggle('negative', rMultiple < 0);
+    }
+
+    this.elements.modal?.querySelectorAll('[data-r]').forEach(b => b.classList.remove('active'));
+    this.calculatePreview();
+  },
+
+  calculateExitPrice() {
+    if (!this.currentTrade) return;
+
+    const riskPerShare = this.currentTrade.entry - this.currentTrade.stop;
+    const exitPrice = this.currentTrade.entry + (this.selectedR * riskPerShare);
+
+    if (this.elements.exitPrice) this.elements.exitPrice.value = exitPrice.toFixed(2);
+    if (this.elements.rDisplay) {
+      this.elements.rDisplay.textContent = `(${this.selectedR}R)`;
+      this.elements.rDisplay.classList.remove('negative');
+    }
+  },
+
+  calculatePreview() {
+    if (!this.currentTrade) return;
+
+    const exitPrice = parseFloat(this.elements.exitPrice?.value) || 0;
+    const remainingShares = this.currentTrade.remainingShares ?? this.currentTrade.shares;
+    const sharesToClose = Math.floor(remainingShares * (this.selectedTrimPercent / 100));
+    const sharesRemaining = remainingShares - sharesToClose;
+
+    const profitPerShare = exitPrice - this.currentTrade.entry;
+    const totalPnL = profitPerShare * sharesToClose;
+    const isProfit = totalPnL >= 0;
+
+    if (this.elements.sharesClosing) this.elements.sharesClosing.textContent = `${Utils.formatNumber(sharesToClose)} shares`;
+    if (this.elements.sharesRemaining) this.elements.sharesRemaining.textContent = `(${Utils.formatNumber(sharesRemaining)} remaining)`;
+
+    if (this.elements.profitPerShare) {
+      this.elements.profitPerShare.textContent = `${isProfit ? '+' : ''}${Utils.formatCurrency(profitPerShare)}`;
+      this.elements.profitPerShare.className = `trim-preview__value ${isProfit ? 'text-success' : 'text-danger'}`;
+    }
+    if (this.elements.totalPnL) {
+      this.elements.totalPnL.textContent = `${isProfit ? '+' : ''}${Utils.formatCurrency(totalPnL)}`;
+      this.elements.totalPnL.className = `trim-preview__value ${isProfit ? 'text-success' : 'text-danger'}`;
+    }
+    if (this.elements.preview) this.elements.preview.classList.toggle('negative', !isProfit);
+  },
+
+  confirm() {
+    if (!this.currentTrade) return;
+
+    const exitPrice = parseFloat(this.elements.exitPrice?.value);
+    if (isNaN(exitPrice) || exitPrice <= 0) {
+      UI.showToast('Please enter a valid exit price', 'error');
+      return;
+    }
+
+    const remainingShares = this.currentTrade.remainingShares ?? this.currentTrade.shares;
+    const sharesToClose = Math.floor(remainingShares * (this.selectedTrimPercent / 100));
+
+    if (sharesToClose <= 0) {
+      UI.showToast('No shares to close', 'error');
+      return;
+    }
+
+    const sharesAfterTrim = remainingShares - sharesToClose;
+    const riskPerShare = this.currentTrade.entry - this.currentTrade.stop;
+    const rMultiple = riskPerShare !== 0 ? (exitPrice - this.currentTrade.entry) / riskPerShare : 0;
+    const pnl = (exitPrice - this.currentTrade.entry) * sharesToClose;
+
+    const closeDate = this.elements.dateInput?.value
+      ? new Date(this.elements.dateInput.value + 'T12:00:00').toISOString()
+      : new Date().toISOString();
+
+    const trimEvent = {
+      id: Date.now(),
+      date: closeDate,
+      shares: sharesToClose,
+      exitPrice: exitPrice,
+      rMultiple: rMultiple,
+      pnl: pnl,
+      percentTrimmed: this.selectedTrimPercent
+    };
+
+    if (!this.currentTrade.trimHistory) this.currentTrade.trimHistory = [];
+
+    const isFullClose = sharesAfterTrim === 0;
+    const newStatus = isFullClose ? 'closed' : 'trimmed';
+    const existingPnL = this.currentTrade.totalRealizedPnL || 0;
+    const newTotalPnL = existingPnL + pnl;
+
+    const updates = {
+      originalShares: this.currentTrade.originalShares ?? this.currentTrade.shares,
+      remainingShares: sharesAfterTrim,
+      status: newStatus,
+      trimHistory: [...this.currentTrade.trimHistory, trimEvent],
+      totalRealizedPnL: newTotalPnL
+    };
+
+    if (isFullClose) {
+      updates.exitPrice = exitPrice;
+      updates.exitDate = closeDate;
+      updates.pnl = newTotalPnL;
+    }
+
+    AppState.updateJournalEntry(this.currentTrade.id, updates);
+    AppState.updateAccount({ realizedPnL: AppState.account.realizedPnL + pnl });
+
+    if (AppState.settings.dynamicAccountEnabled) {
+      const newSize = AppState.settings.startingAccountSize + AppState.account.realizedPnL;
+      AppState.updateAccount({ currentSize: newSize });
+      AppState.emit('accountSizeChanged', newSize);
+    }
+
+    const actionText = isFullClose ? 'closed' : `trimmed ${this.selectedTrimPercent}%`;
+    UI.showToast(
+      `${this.currentTrade.ticker} ${actionText}: ${pnl >= 0 ? '+' : ''}${Utils.formatCurrency(pnl)}`,
+      pnl >= 0 ? 'success' : 'warning'
+    );
+
+    this.close();
+  }
+};
+
+// ============================================
 // Journal
 // ============================================
 
@@ -1034,38 +1448,8 @@ const Journal = {
   },
 
   closeTrade(id) {
-    const entry = AppState.journal.entries.find(e => e.id === id);
-    if (!entry) return;
-
-    const exitPrice = prompt(`Enter exit price for ${entry.ticker}:`);
-    if (!exitPrice) return;
-
-    const exit = parseFloat(exitPrice);
-    if (isNaN(exit)) {
-      UI.showToast('Invalid price', 'error');
-      return;
-    }
-
-    const pnl = (exit - entry.entry) * entry.shares;
-
-    AppState.updateJournalEntry(id, {
-      exitPrice: exit,
-      exitDate: new Date().toISOString(),
-      pnl,
-      status: 'closed'
-    });
-
-    AppState.updateAccount({ realizedPnL: AppState.account.realizedPnL + pnl });
-
-    if (AppState.settings.dynamicAccountEnabled) {
-      const newSize = AppState.settings.startingAccountSize + AppState.account.realizedPnL;
-      AppState.updateAccount({ currentSize: newSize });
-      Settings.updateAccountDisplay(newSize);
-      Calculator.calculate();
-    }
-
-    UI.showToast(`${entry.ticker} closed: ${pnl >= 0 ? '+' : ''}${Utils.formatCurrency(pnl)}`, pnl >= 0 ? 'success' : 'warning');
-    console.log(`💰 Trade closed: ${entry.ticker} | Exit: $${exit} | P&L: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}`);
+    // Open trim modal instead of browser prompt
+    TrimModal.open(id);
   },
 
   deleteTrade(id) {
@@ -1084,13 +1468,14 @@ const Journal = {
   },
 
   renderActiveTrades() {
-    const openTrades = AppState.getOpenTrades();
+    // Include both open and trimmed trades (they still have positions)
+    const activeTrades = AppState.journal.entries.filter(e => e.status === 'open' || e.status === 'trimmed');
     if (this.elements.activeTradeCount) {
-      this.elements.activeTradeCount.textContent = `${openTrades.length} open`;
+      this.elements.activeTradeCount.textContent = `${activeTrades.length} active`;
     }
     if (!this.elements.activeTrades) return;
 
-    if (openTrades.length === 0) {
+    if (activeTrades.length === 0) {
       this.elements.activeTrades.innerHTML = `
         <div class="empty-state">
           <span class="empty-state__icon">🧘</span>
@@ -1100,50 +1485,70 @@ const Journal = {
       return;
     }
 
-    this.elements.activeTrades.innerHTML = openTrades.slice(0, 5).map(trade => `
-      <div class="trade-card" data-id="${trade.id}">
-        <div class="trade-card__header">
-          <span class="trade-card__ticker">${trade.ticker}</span>
-          <span class="trade-card__shares">${trade.shares} shares</span>
-        </div>
-        <div class="trade-card__details">
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Entry</span>
-            <span class="trade-card__value">${Utils.formatCurrency(trade.entry)}</span>
+    this.elements.activeTrades.innerHTML = activeTrades.slice(0, 5).map(trade => {
+      const shares = trade.remainingShares ?? trade.shares;
+      const riskPerShare = trade.entry - trade.stop;
+      const currentRisk = shares * riskPerShare;
+      const isTrimmed = trade.status === 'trimmed';
+      const realizedPnL = trade.totalRealizedPnL || 0;
+
+      return `
+        <div class="trade-card" data-id="${trade.id}">
+          <div class="trade-card__header">
+            <span class="trade-card__ticker">${trade.ticker}</span>
+            <span class="trade-card__shares">${shares} shares${isTrimmed ? ` (${trade.originalShares} orig)` : ''}</span>
           </div>
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Stop</span>
-            <span class="trade-card__value">${Utils.formatCurrency(trade.stop)}</span>
+          <div class="trade-card__details">
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Entry</span>
+              <span class="trade-card__value">${Utils.formatCurrency(trade.entry)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Stop</span>
+              <span class="trade-card__value">${Utils.formatCurrency(trade.stop)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Risk</span>
+              <span class="trade-card__value">${Utils.formatCurrency(currentRisk)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Status</span>
+              <span class="status-badge status-badge--${trade.status}">${isTrimmed ? 'Trimmed' : 'Open'}</span>
+            </div>
+            ${isTrimmed ? `
+            <div class="trade-card__detail">
+              <span class="trade-card__label">Realized</span>
+              <span class="trade-card__value ${realizedPnL >= 0 ? 'text-success' : 'text-danger'}">${realizedPnL >= 0 ? '+' : ''}${Utils.formatCurrency(realizedPnL)}</span>
+            </div>
+            ` : ''}
           </div>
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Risk</span>
-            <span class="trade-card__value">${Utils.formatCurrency(trade.riskDollars)}</span>
+          <div class="trade-card__actions">
+            <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">${isTrimmed ? 'Trim More' : 'Close'}</button>
+            <button class="btn btn--sm btn--ghost" onclick="deleteTrade(${trade.id})">Delete</button>
           </div>
-          <div class="trade-card__detail">
-            <span class="trade-card__label">Status</span>
-            <span class="status-badge status-badge--open">Open</span>
-          </div>
-        </div>
-        <div class="trade-card__actions">
-          <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">Close</button>
-          <button class="btn btn--sm btn--ghost" onclick="deleteTrade(${trade.id})">Delete</button>
-        </div>
-      </div>`).join('');
+        </div>`;
+    }).join('');
   },
 
   renderRiskSummary() {
     if (!this.elements.riskSummary) return;
-    const openTrades = AppState.getOpenTrades();
+    // Include both open and trimmed trades (they still have positions at risk)
+    const activeTrades = AppState.journal.entries.filter(e => e.status === 'open' || e.status === 'trimmed');
 
-    // Show CASH status when no open trades
-    if (openTrades.length === 0) {
+    // Show CASH status when no active trades
+    if (activeTrades.length === 0) {
       this.elements.riskSummary.innerHTML = `
         <span class="risk-summary__label">Status:</span>
         <span class="risk-summary__indicator risk-summary__indicator--low">CASH</span>`;
       return;
     }
 
-    const totalRisk = openTrades.reduce((sum, t) => sum + t.riskDollars, 0);
+    // Calculate risk based on remaining shares
+    const totalRisk = activeTrades.reduce((sum, t) => {
+      const shares = t.remainingShares ?? t.shares;
+      const riskPerShare = t.entry - t.stop;
+      return sum + (shares * riskPerShare);
+    }, 0);
     const riskPercent = (totalRisk / AppState.account.currentSize) * 100;
 
     let level = 'low';
@@ -1187,16 +1592,26 @@ const Journal = {
 
     this.elements.journalTableBody.innerHTML = trades.map(trade => {
       const date = Utils.formatDate(trade.timestamp);
-      const pnlDisplay = trade.pnl !== null
-        ? `<span class="${trade.pnl >= 0 ? 'text-success' : 'text-danger'}">${trade.pnl >= 0 ? '+' : ''}${Utils.formatCurrency(trade.pnl)}</span>`
+      const isTrimmed = trade.status === 'trimmed';
+
+      // Use totalRealizedPnL for trimmed/closed trades, fallback to pnl for legacy
+      const pnlValue = trade.totalRealizedPnL ?? trade.pnl;
+      const pnlDisplay = pnlValue !== null && pnlValue !== undefined
+        ? `<span class="${pnlValue >= 0 ? 'text-success' : 'text-danger'}">${pnlValue >= 0 ? '+' : ''}${Utils.formatCurrency(pnlValue)}</span>`
         : '—';
+
+      // Show remaining shares for trimmed trades
+      const sharesDisplay = isTrimmed
+        ? `${trade.remainingShares}/${trade.originalShares}`
+        : trade.shares;
+
       return `
         <tr data-id="${trade.id}">
           <td>${date}</td>
           <td>${trade.ticker}</td>
           <td>${Utils.formatCurrency(trade.entry)}</td>
           <td>${Utils.formatCurrency(trade.stop)}</td>
-          <td>${trade.shares}</td>
+          <td>${sharesDisplay}</td>
           <td>${Utils.formatCurrency(trade.riskDollars)}</td>
           <td><span class="status-badge status-badge--${trade.status}">${trade.status}</span></td>
           <td>${pnlDisplay}</td>
@@ -1204,14 +1619,18 @@ const Journal = {
         </tr>`;
     }).join('');
 
-    const wins = trades.filter(t => t.pnl > 0).length;
-    const losses = trades.filter(t => t.pnl < 0).length;
+    // Summary - use totalRealizedPnL for accurate counting
+    const getPnL = (t) => t.totalRealizedPnL ?? t.pnl ?? 0;
+    const wins = trades.filter(t => getPnL(t) > 0).length;
+    const losses = trades.filter(t => getPnL(t) < 0).length;
     const open = trades.filter(t => t.status === 'open').length;
-    const totalPnL = trades.reduce((sum, t) => sum + (t.pnl || 0), 0);
+    const trimmed = trades.filter(t => t.status === 'trimmed').length;
+    const totalPnL = trades.reduce((sum, t) => sum + getPnL(t), 0);
 
     if (this.elements.journalSummaryText) {
+      const activeCount = open + trimmed;
       this.elements.journalSummaryText.textContent =
-        `${trades.length} trades | ${wins}W-${losses}L-${open}O | ${totalPnL >= 0 ? '+' : ''}${Utils.formatCurrency(totalPnL)}`;
+        `${trades.length} trades | ${wins}W-${losses}L-${activeCount}A | ${totalPnL >= 0 ? '+' : ''}${Utils.formatCurrency(totalPnL)}`;
     }
   }
 };
@@ -1533,7 +1952,7 @@ const Settings = {
           this.elements.accountSize.value = Utils.formatWithCommas(value);
         }
         this.updateAccountDisplay(value);
-        SettingsCard.updateSummary(value, AppState.account.maxPositionPercent);
+        SettingsToggle.updateSummary(value, AppState.account.maxPositionPercent);
         Calculator.calculate();
       };
 
@@ -1820,7 +2239,7 @@ const FocusManager = {
   activatableCards: null,
   welcomeCard: null,
   resultsGrid: null,
-  profitTargetsSection: null,
+  rProgressBar: null,
   scenariosSection: null,
   saveBtn: null,
   isResultsActive: false,
@@ -1831,7 +2250,7 @@ const FocusManager = {
     this.activatableCards = document.querySelectorAll('.result-card--activatable');
     this.welcomeCard = document.getElementById('welcomeCard');
     this.resultsGrid = document.getElementById('resultsGrid');
-    this.profitTargetsSection = document.getElementById('profitTargetsSection');
+    this.rProgressBar = document.getElementById('rProgressBar');
     this.scenariosSection = document.getElementById('scenariosSection');
     this.saveBtn = document.getElementById('logTradeBtn');
 
@@ -1842,7 +2261,10 @@ const FocusManager = {
   showWelcome() {
     if (this.welcomeCard) this.welcomeCard.classList.remove('hidden');
     if (this.resultsGrid) this.resultsGrid.classList.add('hidden');
-    if (this.profitTargetsSection) this.profitTargetsSection.classList.add('hidden');
+    if (this.rProgressBar) {
+      this.rProgressBar.classList.add('hidden');
+      this.rProgressBar.classList.remove('visible');
+    }
     if (this.scenariosSection) this.scenariosSection.classList.add('hidden');
     // Disable Save to Journal button when no results
     if (this.saveBtn) {
@@ -1853,7 +2275,7 @@ const FocusManager = {
   showResults() {
     if (this.welcomeCard) this.welcomeCard.classList.add('hidden');
     if (this.resultsGrid) this.resultsGrid.classList.remove('hidden');
-    if (this.profitTargetsSection) this.profitTargetsSection.classList.remove('hidden');
+    if (this.rProgressBar) this.rProgressBar.classList.remove('hidden');
     if (this.scenariosSection) this.scenariosSection.classList.remove('hidden');
   },
 
@@ -1930,8 +2352,17 @@ function initApp() {
   Journal.init();
   console.log('✅ Journal loaded');
 
+  TrimModal.init();
+  console.log('✅ Trim modal loaded');
+
   SettingsToggle.init();
   FocusManager.init();
+
+  // Sync Quick Settings summary with loaded values
+  SettingsToggle.updateSummary(
+    AppState.account.currentSize,
+    AppState.account.maxPositionPercent
+  );
 
   // Prevent tooltip clicks from triggering label focus
   document.addEventListener('click', (e) => {

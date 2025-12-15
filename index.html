@@ -229,7 +229,7 @@
             <button class="card__header card__header--toggle" id="settingsToggle">
               <span class="card__icon">⚡</span>
               <h2 class="card__title">Quick Settings</h2>
-              <span class="settings-summary" id="settingsSummary">$50k acc. · Max 100%</span>
+              <span class="settings-summary" id="settingsSummary">$10k acc. · Max 100%</span>
               <svg class="card__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
@@ -387,28 +387,92 @@
             </div>
           </div>
 
-          <!-- Profit Targets Section -->
-          <div class="results-section" id="profitTargetsSection">
-            <h3 class="results-section__title">Profit Targets</h3>
-
-            <div class="results-grid results-grid--3">
-              <div class="result-card">
-                <span class="result-card__label">R-Multiple</span>
-                <span class="result-card__value" id="rMultiple">—</span>
-                <span class="result-card__sub">if target hit</span>
+          <!-- R-Multiple Chart Levels -->
+          <div class="r-levels" id="rProgressBar">
+            <div class="r-levels__header">
+              <div class="r-levels__header-left">
+                <h3 class="r-levels__title">Risk Levels</h3>
+                <span class="r-levels__subtitle">R-Multiple Targets</span>
               </div>
-
-              <div class="result-card result-card--warning">
-                <span class="result-card__badge">Trim Zone</span>
-                <span class="result-card__label">5R Target</span>
-                <span class="result-card__value" id="target5R">—</span>
-                <span class="result-card__sub">Sell 25% here</span>
+              <div class="r-levels__header-right">
+                <span class="r-levels__header-label">Potential Profit</span>
               </div>
+            </div>
+            <div class="r-levels__body">
+              <div class="r-levels__row r-levels__row--r5">
+                <span class="r-levels__tag">5R</span>
+                <span class="r-levels__price" id="r5RPrice">$0.00</span>
+                <span class="r-levels__line"></span>
+                <span class="r-levels__profit" id="r5RProfit">+$0.00</span>
+                <span class="r-levels__badge">Trim</span>
+              </div>
+              <div class="r-levels__row r-levels__row--r4">
+                <span class="r-levels__tag">4R</span>
+                <span class="r-levels__price" id="r4RPrice">$0.00</span>
+                <span class="r-levels__line"></span>
+                <span class="r-levels__profit" id="r4RProfit">+$0.00</span>
+              </div>
+              <div class="r-levels__row r-levels__row--r3">
+                <span class="r-levels__tag">3R</span>
+                <span class="r-levels__price" id="r3RPrice">$0.00</span>
+                <span class="r-levels__line"></span>
+                <span class="r-levels__profit" id="r3RProfit">+$0.00</span>
+              </div>
+              <div class="r-levels__row r-levels__row--r2">
+                <span class="r-levels__tag">2R</span>
+                <span class="r-levels__price" id="r2RPrice">$0.00</span>
+                <span class="r-levels__line"></span>
+                <span class="r-levels__profit" id="r2RProfit">+$0.00</span>
+              </div>
+              <div class="r-levels__row r-levels__row--r1">
+                <span class="r-levels__tag">1R</span>
+                <span class="r-levels__price" id="r1RPrice">$0.00</span>
+                <span class="r-levels__line"></span>
+                <span class="r-levels__profit" id="r1RProfit">+$0.00</span>
+              </div>
+              <div class="r-levels__row r-levels__row--entry">
+                <span class="r-levels__tag">Entry</span>
+                <span class="r-levels__price" id="rEntryPrice">$0.00</span>
+                <span class="r-levels__line r-levels__line--solid"></span>
+                <span class="r-levels__profit r-levels__profit--muted">Breakeven</span>
+              </div>
+              <div class="r-levels__row r-levels__row--stop">
+                <span class="r-levels__tag">Stop</span>
+                <span class="r-levels__price" id="rStopPrice">$0.00</span>
+                <span class="r-levels__line"></span>
+                <span class="r-levels__profit r-levels__profit--loss" id="rStopProfit">-$0.00</span>
+              </div>
+            </div>
+          </div>
 
-              <div class="result-card result-card--success">
-                <span class="result-card__label">Potential Profit</span>
-                <span class="result-card__value" id="potentialProfit">—</span>
-                <span class="result-card__sub" id="profitROI">—</span>
+          <!-- What If Section - Progressive Disclosure (only shows when target price entered) -->
+          <div class="what-if" id="whatIfSection">
+            <div class="what-if__header">
+              <div class="what-if__header-left">
+                <h3 class="what-if__title">What If?</h3>
+                <span class="what-if__subtitle">Target Price Projection</span>
+              </div>
+              <div class="what-if__header-right">
+                <span class="what-if__target-label">If price hits</span>
+                <span class="what-if__target-price" id="whatIfTargetPrice">$0.00</span>
+              </div>
+            </div>
+            <div class="what-if__body">
+              <div class="what-if__stat">
+                <span class="what-if__stat-value" id="rMultiple">0.00R</span>
+                <span class="what-if__stat-label">R-Multiple</span>
+              </div>
+              <div class="what-if__stat">
+                <span class="what-if__stat-value" id="profitPerShare">$0.00</span>
+                <span class="what-if__stat-label">Per Share</span>
+              </div>
+              <div class="what-if__stat what-if__stat--highlight">
+                <span class="what-if__stat-value" id="potentialProfit">$0.00</span>
+                <span class="what-if__stat-label">Profit</span>
+              </div>
+              <div class="what-if__stat">
+                <span class="what-if__stat-value" id="profitROI">0%</span>
+                <span class="what-if__stat-label">ROI</span>
               </div>
             </div>
           </div>
@@ -686,6 +750,117 @@
       <div class="journal-summary">
         <span id="journalSummaryText">0 trades</span>
       </div>
+    </div>
+  </div>
+
+  <!-- Close/Trim Position Modal -->
+  <div class="modal-overlay" id="trimModalOverlay"></div>
+  <div class="modal modal--trim" id="trimModal">
+    <div class="modal__header">
+      <h2 class="modal__title">Close Position: <span id="trimModalTicker">TICKER</span></h2>
+      <button class="icon-btn" id="closeTrimModalBtn" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal__content">
+      <!-- Trade Summary -->
+      <div class="trim-summary">
+        <div class="trim-summary__row">
+          <span class="trim-summary__label">Entry Price</span>
+          <span class="trim-summary__value" id="trimEntryPrice">$0.00</span>
+        </div>
+        <div class="trim-summary__row">
+          <span class="trim-summary__label">Stop Loss</span>
+          <span class="trim-summary__value" id="trimStopLoss">$0.00</span>
+        </div>
+        <div class="trim-summary__row">
+          <span class="trim-summary__label">Risk Per Share</span>
+          <span class="trim-summary__value" id="trimRiskPerShare">$0.00</span>
+        </div>
+        <div class="trim-summary__row trim-summary__row--highlight">
+          <span class="trim-summary__label">Remaining Shares</span>
+          <span class="trim-summary__value" id="trimRemainingShares">0</span>
+        </div>
+      </div>
+
+      <!-- R-Multiple Selection -->
+      <div class="trim-section">
+        <label class="input-label">Exit at R-Multiple</label>
+        <div class="preset-group preset-group--compact">
+          <button type="button" class="preset-btn" data-r="1">1R</button>
+          <button type="button" class="preset-btn" data-r="2">2R</button>
+          <button type="button" class="preset-btn" data-r="3">3R</button>
+          <button type="button" class="preset-btn active" data-r="5">5R</button>
+        </div>
+
+        <!-- Exit Price -->
+        <div class="input-group input-group--inline">
+          <label class="input-label" for="trimExitPrice">Exit Price</label>
+          <div class="input-wrapper input-wrapper--prefix input-wrapper--sm">
+            <span class="input-prefix">$</span>
+            <input type="text" class="input input--mono" id="trimExitPrice" placeholder="0.00">
+          </div>
+          <span class="trim-r-display" id="trimRDisplay">(5R)</span>
+        </div>
+      </div>
+
+      <!-- Trim Percentage Selection -->
+      <div class="trim-section">
+        <label class="input-label">Trim Percentage</label>
+        <div class="preset-group preset-group--compact">
+          <button type="button" class="preset-btn" data-trim="10">10%</button>
+          <button type="button" class="preset-btn" data-trim="20">20%</button>
+          <button type="button" class="preset-btn" data-trim="25">25%</button>
+          <button type="button" class="preset-btn" data-trim="50">50%</button>
+          <button type="button" class="preset-btn active" data-trim="100">All</button>
+        </div>
+
+        <!-- Custom trim percentage -->
+        <div class="preset-custom">
+          <span class="preset-custom__label">Custom</span>
+          <div class="input-wrapper input-wrapper--suffix input-wrapper--compact">
+            <input type="text" class="input input--mono" id="customTrimPercent" placeholder="">
+            <span class="input-suffix">%</span>
+          </div>
+        </div>
+
+        <!-- Shares to close -->
+        <div class="trim-shares-display">
+          <span class="trim-shares-display__label">Closing</span>
+          <span class="trim-shares-display__value" id="trimSharesClosing">0 shares</span>
+          <span class="trim-shares-display__remaining" id="trimSharesRemaining">(0 remaining)</span>
+        </div>
+      </div>
+
+      <!-- Close Date -->
+      <div class="trim-section">
+        <div class="input-group">
+          <label class="input-label" for="trimDate">Close Date</label>
+          <input type="date" class="input input--mono" id="trimDate">
+        </div>
+      </div>
+
+      <!-- P&L Preview -->
+      <div class="trim-preview" id="trimPreview">
+        <div class="trim-preview__header">P&L Preview</div>
+        <div class="trim-preview__row">
+          <span class="trim-preview__label">Profit per Share</span>
+          <span class="trim-preview__value text-success" id="trimProfitPerShare">+$0.00</span>
+        </div>
+        <div class="trim-preview__row trim-preview__row--total">
+          <span class="trim-preview__label">Total P&L</span>
+          <span class="trim-preview__value text-success" id="trimTotalPnL">+$0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal__footer">
+      <button class="btn btn--ghost" id="cancelTrimBtn">Cancel</button>
+      <button class="btn btn--success" id="confirmTrimBtn">Confirm Close</button>
     </div>
   </div>
 
