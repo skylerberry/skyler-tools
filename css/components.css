@@ -2283,6 +2283,20 @@
   border-radius: 50%;
   cursor: help;
   transition: all var(--transition-fast);
+  /* Larger touch target for mobile */
+  position: relative;
+}
+
+/* Expanded touch target - 44px minimum for iOS */
+.tooltip__icon::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
 }
 
 .tooltip:hover .tooltip__icon,

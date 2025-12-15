@@ -1933,6 +1933,15 @@ function initApp() {
   SettingsToggle.init();
   FocusManager.init();
 
+  // Prevent tooltip clicks from triggering label focus
+  document.addEventListener('click', (e) => {
+    const tooltip = e.target.closest('.tooltip');
+    if (tooltip) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+
   console.log('📊 Trade Manager initialized successfully');
 }
 
