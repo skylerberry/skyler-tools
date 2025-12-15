@@ -168,23 +168,21 @@ class HintArrowHandler {
     const upArrow = document.querySelector('.welcome-card__hint-arrow--up');
     if (!upArrow) return;
 
+    // Make it tappable
     upArrow.style.cursor = 'pointer';
-    upArrow.addEventListener('click', () => this.scrollToInput());
+
+    // Handle both click and touch
+    upArrow.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.scrollToInput();
+    });
   }
 
   scrollToInput() {
-    // Only active on mobile viewports (768px or less)
-    if (window.innerWidth > 768) return;
-
-    const inputPanel = document.querySelector('.panel--input');
-    if (!inputPanel) return;
-
-    const headerHeight = 60;
-    const padding = 16;
-    const targetY = inputPanel.getBoundingClientRect().top + window.scrollY - headerHeight - padding;
-
+    // On mobile, input panel is at top - just scroll to top
     window.scrollTo({
-      top: Math.max(0, targetY),
+      top: 0,
       behavior: 'smooth'
     });
   }
