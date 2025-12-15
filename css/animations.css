@@ -241,38 +241,22 @@
   padding-bottom: var(--space-5);
 }
 
-/* Settings card - simple fade animation (desktop overlay) */
+/* Settings card - max-height animation (push down, all screen sizes) */
 .card--settings .card__body--collapsible {
+  max-height: 0;
+  overflow: hidden;
   opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease-out, border-color 0.25s ease-out, box-shadow 0.25s ease-out;
+  padding-top: 0;
+  padding-bottom: 0;
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.3s ease-out;
 }
 
 .card--settings.open .card__body--collapsible {
+  max-height: 400px;
   opacity: 1;
-  pointer-events: auto;
   overflow: visible;
-  transition: opacity 0.25s ease-out, border-color 0.25s ease-out, box-shadow 0.25s ease-out;
-}
-
-/* Mobile: Settings card uses max-height animation (push down) */
-@media (max-width: 900px) {
-  .card--settings .card__body--collapsible {
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    transition: max-height 0.3s ease-out, opacity 0.2s ease-out, padding 0.3s ease-out;
-  }
-
-  .card--settings.open .card__body--collapsible {
-    max-height: 300px;
-    opacity: 1;
-    overflow: visible;
-    padding-top: var(--space-4);
-    padding-bottom: var(--space-4);
-  }
+  padding-top: var(--space-4);
+  padding-bottom: var(--space-4);
 }
 
 /* === Scenarios Expand Animation === */

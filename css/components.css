@@ -838,7 +838,7 @@
 }
 
 .card--settings.open {
-  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  border-radius: var(--border-radius-lg);
 }
 
 .card--settings .card__header {
@@ -868,44 +868,17 @@
   display: none;
 }
 
+/* Quick Settings - push-down behavior (content flows naturally, never clips) */
 .card--settings .card__body--collapsible {
-  position: absolute;
-  top: 100%;
-  left: -1px;
-  right: -1px;
+  position: static;
   padding: 0 var(--space-4);
   background: var(--bg-surface);
-  border: 1px solid transparent;
-  border-top: none;
+  border-top: 1px solid var(--border-subtle);
   border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-  z-index: var(--z-dropdown);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0);
 }
 
 .card--settings.open .card__body--collapsible {
   padding: var(--space-4);
-  border-color: var(--border-subtle);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* Mobile: Quick Settings pushes content down instead of overlay */
-@media (max-width: 900px) {
-  .card--settings.open {
-    border-radius: var(--border-radius-lg);
-  }
-
-  .card--settings .card__body--collapsible {
-    position: static;
-    border: none;
-    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
-    box-shadow: none;
-    border-top: 1px solid var(--border-subtle);
-  }
-
-  .card--settings.open .card__body--collapsible {
-    border-color: transparent;
-    box-shadow: none;
-  }
 }
 
 .card--settings .settings-grid {
