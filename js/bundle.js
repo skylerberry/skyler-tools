@@ -2346,11 +2346,15 @@ const HintArrow = {
     upArrow.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
+      this.scrollToInput();
     });
+  },
+
+  scrollToInput() {
+    const inputPanel = document.querySelector('.panel--input');
+    if (inputPanel) {
+      inputPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 };
 
