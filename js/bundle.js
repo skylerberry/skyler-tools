@@ -64,7 +64,7 @@ const Utils = {
 const AppState = {
   state: {
     settings: {
-      startingAccountSize: 50000,
+      startingAccountSize: 10000,
       defaultRiskPercent: 1,
       defaultMaxPositionPercent: 100,
       dynamicAccountEnabled: true,
@@ -72,7 +72,7 @@ const AppState = {
       sarMember: true
     },
     account: {
-      currentSize: 50000,
+      currentSize: 10000,
       realizedPnL: 0,
       riskPercent: 1,
       maxPositionPercent: 100
@@ -386,6 +386,27 @@ const Calculator = {
     inputs.forEach(id => {
       const el = this.elements[id];
       if (el) el.addEventListener('input', () => this.calculate());
+    });
+
+    // Mobile: Enter key advances to next field
+    const fieldOrder = ['ticker', 'entryPrice', 'stopLoss', 'targetPrice'];
+    fieldOrder.forEach((id, index) => {
+      const el = this.elements[id];
+      if (el) {
+        el.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const nextId = fieldOrder[index + 1];
+            if (nextId && this.elements[nextId]) {
+              this.elements[nextId].focus();
+              this.elements[nextId].select();
+            } else {
+              // Last field - blur to dismiss keyboard
+              el.blur();
+            }
+          }
+        });
+      }
     });
 
     if (this.elements.accountSize) {
@@ -1293,7 +1314,7 @@ const DataManager = {
 
     // Reset state
     AppState.state.settings = {
-      startingAccountSize: 50000,
+      startingAccountSize: 10000,
       defaultRiskPercent: 1,
       defaultMaxPositionPercent: 100,
       dynamicAccountEnabled: true,
@@ -1301,7 +1322,7 @@ const DataManager = {
       sarMember: true
     };
     AppState.state.account = {
-      currentSize: 50000,
+      currentSize: 10000,
       realizedPnL: 0,
       riskPercent: 1,
       maxPositionPercent: 100

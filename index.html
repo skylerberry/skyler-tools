@@ -59,7 +59,7 @@
       </div>
       <div class="header__account">
         <span class="header__account-label">Account</span>
-        <span class="header__account-value">$50,000</span>
+        <span class="header__account-value">$10,000</span>
       </div>
       <div class="header__actions">
         <button class="icon-btn" id="settingsBtn" aria-label="Settings" data-tooltip="Settings">
@@ -126,6 +126,7 @@
                   class="input input--mono input--lg"
                   id="ticker"
                   placeholder="TSLA"
+                  enterkeyhint="next"
                 >
               </div>
 
@@ -139,6 +140,7 @@
                       class="input input--mono"
                       id="entryPrice"
                       placeholder="0.00"
+                      enterkeyhint="next"
                     >
                     <div class="input-stepper">
                       <button type="button" class="input-stepper__btn" data-target="entryPrice" data-direction="up" title="Increase by 0.01" tabindex="-1">+</button>
@@ -161,6 +163,7 @@
                       class="input input--mono"
                       id="stopLoss"
                       placeholder="0.00"
+                      enterkeyhint="next"
                     >
                     <div class="input-stepper">
                       <button type="button" class="input-stepper__btn" data-target="stopLoss" data-direction="up" title="Increase by 0.01" tabindex="-1">+</button>
@@ -185,6 +188,7 @@
                     class="input input--mono input--success"
                     id="targetPrice"
                     placeholder="0.00"
+                    enterkeyhint="done"
                   >
                 </div>
               </div>
@@ -247,8 +251,8 @@
                       type="text"
                       class="input input--mono"
                       id="accountSize"
-                      value="50,000"
-                      placeholder="50,000"
+                      value="10,000"
+                      placeholder="10,000"
                     >
                   </div>
                   <span class="input-hint">Supports K/M notation (e.g. 50k, 1.5m)</span>
@@ -527,7 +531,7 @@
           <label class="input-label" for="settingsAccountSize">Starting Account Size</label>
           <div class="input-wrapper input-wrapper--prefix">
             <span class="input-prefix">$</span>
-            <input type="text" class="input input--mono" id="settingsAccountSize" value="50,000">
+            <input type="text" class="input input--mono" id="settingsAccountSize" value="10,000">
           </div>
           <span class="input-hint">Your baseline balance. Supports K/M notation (e.g. 50k, 1.5m)</span>
         </div>
@@ -568,7 +572,7 @@
         <div class="account-summary" id="accountSummary">
           <div class="account-summary__row">
             <span class="account-summary__label">Starting Balance</span>
-            <span class="account-summary__value" id="summaryStarting">$50,000.00</span>
+            <span class="account-summary__value" id="summaryStarting">$10,000.00</span>
           </div>
           <div class="account-summary__row">
             <span class="account-summary__label">Realized P&L</span>
@@ -576,7 +580,7 @@
           </div>
           <div class="account-summary__row account-summary__row--total">
             <span class="account-summary__label">Current Account</span>
-            <span class="account-summary__value" id="summaryCurrent">$50,000.00</span>
+            <span class="account-summary__value" id="summaryCurrent">$10,000.00</span>
           </div>
         </div>
 
