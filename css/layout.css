@@ -333,10 +333,11 @@
   .panel--journal {
     padding: var(--space-3);
     width: 100%;
-    flex-shrink: 0;
+    flex: 0 0 auto;
   }
 
   .panel__content {
+    flex: 0 0 auto;
     overflow: visible;
   }
 
