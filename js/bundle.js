@@ -2334,6 +2334,27 @@ const FocusManager = {
 };
 
 // ============================================
+// Hint Arrow Handler - Scroll to input on mobile
+// ============================================
+
+const HintArrow = {
+  init() {
+    const upArrow = document.querySelector('.welcome-card__hint-arrow--up');
+    if (!upArrow) return;
+
+    upArrow.style.cursor = 'pointer';
+    upArrow.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    });
+  }
+};
+
+// ============================================
 // Initialize App
 // ============================================
 
@@ -2357,6 +2378,7 @@ function initApp() {
 
   SettingsToggle.init();
   FocusManager.init();
+  HintArrow.init();
 
   // Sync Quick Settings summary with loaded values
   SettingsToggle.updateSummary(
