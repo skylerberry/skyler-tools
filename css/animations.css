@@ -357,6 +357,35 @@
   }
 }
 
+@keyframes toastSlideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-24px) scale(0.96);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.01);
+  }
+  70% {
+    transform: translateY(-2px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toastSlideUp {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}
+
 .toast.removing {
   animation: toastSpringOut 0.25s ease-in forwards;
 }

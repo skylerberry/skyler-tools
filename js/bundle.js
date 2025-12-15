@@ -260,6 +260,7 @@ const AppState = {
 
 const UI = {
   toastContainer: null,
+  toastContainerTop: null,
 
   toastIcons: {
     success: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
@@ -299,6 +300,34 @@ const UI = {
     if (!toast || !toast.parentNode) return;
     toast.classList.add('removing');
     setTimeout(() => toast.remove(), 300);
+  },
+
+  showToastTop(message, type = 'success', duration = 3000) {
+    if (!this.toastContainerTop) {
+      this.toastContainerTop = document.getElementById('toastContainerTop');
+    }
+    if (!this.toastContainerTop) return;
+
+    const icon = this.toastIcons[type] || this.toastIcons.success;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.innerHTML = `
+      <span class="toast__icon">${icon}</span>
+      <span class="toast__message">${message}</span>
+      <button class="toast__close" aria-label="Dismiss">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M1 1l8 8M9 1l-8 8"/>
+        </svg>
+      </button>
+    `;
+
+    toast.querySelector('.toast__close').addEventListener('click', () => {
+      this.removeToast(toast);
+    });
+
+    this.toastContainerTop.appendChild(toast);
+    setTimeout(() => this.removeToast(toast), duration);
   },
 
   flashHeaderAccount() {
@@ -814,7 +843,7 @@ const Parser = {
       if (parsed.riskPercent) parts.push(`${parsed.riskPercent}%`);
 
       this.flashButton('success');
-      UI.showToast(`Parsed: ${parts.join(' | ')}`, 'success');
+      UI.showToastTop(`Parsed: ${parts.join(' | ')}`, 'success', 3000);
       console.log(`🔍 Alert parsed: ${parts.join(' | ')}`);
 
       this.scrollToResultsOnMobile();
