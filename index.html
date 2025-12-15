@@ -97,22 +97,24 @@
             </div>
             <p class="card__tagline">Calculate position size based on your risk</p>
             <div class="card__body">
-              <!-- Paste Alert - Drop Zone -->
-              <button class="drop-zone" id="pasteAlertBtn">
-                <span class="drop-zone__badge">NEW FEATURE</span>
-                <svg class="drop-zone__icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                  <path d="M12 11v6"></path>
-                  <path d="m9 14 3-3 3 3"></path>
-                </svg>
-                <span class="drop-zone__title">Paste Discord Alert</span>
-                <span class="drop-zone__hint" id="shortcutHint">
-                  Click or press <span class="drop-zone__key"><span class="shortcut-text">⌘V</span></span> anywhere
-                </span>
-              </button>
+              <!-- Paste Alert - Drop Zone (SAR Members) -->
+              <div id="discordDropZone">
+                <button class="drop-zone" id="pasteAlertBtn">
+                  <span class="drop-zone__badge">NEW FEATURE</span>
+                  <svg class="drop-zone__icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <path d="M12 11v6"></path>
+                    <path d="m9 14 3-3 3 3"></path>
+                  </svg>
+                  <span class="drop-zone__title">Paste Discord Alert</span>
+                  <span class="drop-zone__hint" id="shortcutHint">
+                    Click or press <span class="drop-zone__key"><span class="shortcut-text">⌘V</span></span> anywhere
+                  </span>
+                </button>
 
-              <div class="input-divider"></div>
+                <div class="input-divider"></div>
+              </div>
 
               <div class="input-group">
                 <label class="input-label" for="ticker">
@@ -336,8 +338,18 @@
                 <li><span class="welcome-card__check"></span>R-multiple profit targets</li>
               </ul>
               <p class="welcome-card__hint">
-                <span class="welcome-card__hint-arrow welcome-card__hint-arrow--left">←</span>
-                <span class="welcome-card__hint-arrow welcome-card__hint-arrow--up">↑</span>
+                <span class="welcome-card__hint-arrow welcome-card__hint-arrow--left">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 12H5"></path>
+                    <path d="m12 19-7-7 7-7"></path>
+                  </svg>
+                </span>
+                <span class="welcome-card__hint-arrow welcome-card__hint-arrow--up">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 19V5"></path>
+                    <path d="m5 12 7-7 7 7"></path>
+                  </svg>
+                </span>
                 <span class="welcome-card__hint-text">Enter entry & stop prices to begin</span>
               </p>
               <p class="welcome-card__hint-discord">(or paste a Discord alert to auto-fill)</p>
@@ -583,6 +595,19 @@
             <button class="preset-btn active" data-setting="theme" data-value="dark">Dark</button>
             <button class="preset-btn" data-setting="theme" data-value="light">Light</button>
           </div>
+        </div>
+
+        <div class="input-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="sarMemberToggle" checked>
+            <span class="checkbox-box"></span>
+            <span class="checkbox-text">SAR Member</span>
+            <span class="tooltip">
+              <span class="tooltip__icon">?</span>
+              <span class="tooltip__content tooltip__content--wide">Automatically import Morgan's trades! Just copy any alert from the 🔔︱alerts channel and paste it in. Huge time saver.</span>
+            </span>
+          </label>
+          <p class="input-hint">Show Discord alert parser</p>
         </div>
       </div>
 

@@ -68,7 +68,8 @@ const AppState = {
       defaultRiskPercent: 1,
       defaultMaxPositionPercent: 100,
       dynamicAccountEnabled: true,
-      theme: 'dark'
+      theme: 'dark',
+      sarMember: true
     },
     account: {
       currentSize: 50000,
@@ -1296,7 +1297,8 @@ const DataManager = {
       defaultRiskPercent: 1,
       defaultMaxPositionPercent: 100,
       dynamicAccountEnabled: true,
-      theme: AppState.settings.theme // Keep theme
+      theme: AppState.settings.theme, // Keep theme
+      sarMember: true
     };
     AppState.state.account = {
       currentSize: 50000,
@@ -1480,7 +1482,11 @@ const Settings = {
       exportPDFBtn: document.getElementById('exportPDFBtn'),
       journalCopyCSV: document.getElementById('journalCopyCSV'),
       journalCopyTSV: document.getElementById('journalCopyTSV'),
-      journalDownload: document.getElementById('journalDownload')
+      journalDownload: document.getElementById('journalDownload'),
+      // SAR Member toggle
+      sarMemberToggle: document.getElementById('sarMemberToggle'),
+      discordDropZone: document.getElementById('discordDropZone'),
+      welcomeDiscordHint: document.querySelector('.welcome-card__hint-discord')
     };
   },
 
@@ -1595,6 +1601,14 @@ const Settings = {
       this.elements.journalDownload.addEventListener('click', () => DataManager.exportCSV());
     }
 
+    // SAR Member toggle
+    if (this.elements.sarMemberToggle) {
+      this.elements.sarMemberToggle.addEventListener('change', (e) => {
+        this.toggleDiscordDropZone(e.target.checked);
+        AppState.updateSettings({ sarMember: e.target.checked });
+      });
+    }
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -1650,7 +1664,23 @@ const Settings = {
       this.elements.maxPositionPercent.value = AppState.settings.defaultMaxPositionPercent;
     }
 
+    // SAR Member toggle (default true)
+    const isSarMember = AppState.settings.sarMember !== false;
+    if (this.elements.sarMemberToggle) {
+      this.elements.sarMemberToggle.checked = isSarMember;
+    }
+    this.toggleDiscordDropZone(isSarMember);
+
     this.updateAccountDisplay(AppState.account.currentSize);
+  },
+
+  toggleDiscordDropZone(show) {
+    if (this.elements.discordDropZone) {
+      this.elements.discordDropZone.style.display = show ? '' : 'none';
+    }
+    if (this.elements.welcomeDiscordHint) {
+      this.elements.welcomeDiscordHint.style.display = show ? '' : 'none';
+    }
   },
 
   toggleTheme() {
