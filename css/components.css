@@ -3532,9 +3532,16 @@
     max-height: none;
     border-radius: 0;
     margin: 0;
+    display: flex;
+    flex-direction: column;
   }
 
-  .wizard-progress {
+  .modal--wizard .modal__header {
+    flex-shrink: 0;
+  }
+
+  .modal--wizard .wizard-progress {
+    flex-shrink: 0;
     padding: var(--space-3);
   }
 
@@ -3547,21 +3554,41 @@
     margin-bottom: 0;
   }
 
-  .wizard-trade-summary__grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* Make wizard steps container scrollable on mobile */
+  .modal--wizard .wizard-steps {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .wizard-btn-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* Ensure active step flows naturally for scroll */
+  .modal--wizard .wizard-step.active {
+    position: relative;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
-  .wizard-step__actions {
+  /* Push actions to bottom on mobile */
+  .modal--wizard .wizard-step__actions {
+    margin-top: auto;
+    padding-top: var(--space-4);
     flex-wrap: wrap;
   }
 
   .wizard-step__actions .btn {
     flex: 1;
     min-width: 100px;
+  }
+
+  .wizard-trade-summary__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .wizard-btn-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
