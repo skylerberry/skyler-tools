@@ -1588,12 +1588,14 @@
   inset: 0;
   background: rgba(0, 0, 0, 0);
   visibility: hidden;
+  pointer-events: none;
   z-index: var(--z-modal);
 }
 
 .settings-overlay.open {
   background: rgba(0, 0, 0, 0.5);
   visibility: visible;
+  pointer-events: auto;
 }
 
 .settings-panel {
@@ -1608,6 +1610,7 @@
   transform: translateX(100%);
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
@@ -1618,6 +1621,7 @@
   transform: translateX(0);
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .settings-panel__header {
@@ -1828,6 +1832,7 @@
   background: rgba(0, 0, 0, 0.7);
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition: all var(--transition-base);
   z-index: var(--z-modal);
 }
@@ -1835,6 +1840,7 @@
 .modal-overlay.open {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .modal {
@@ -1850,6 +1856,7 @@
   border-radius: var(--border-radius-xl);
   opacity: 0;
   visibility: hidden;
+  pointer-events: none;
   transition: all var(--transition-base);
   z-index: var(--z-modal);
   display: flex;
@@ -1859,6 +1866,7 @@
 .modal.open {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
   transform: translate(-50%, -50%) scale(1);
 }
 
