@@ -528,6 +528,9 @@
               <button class="btn btn--success btn--full" id="logTradeBtn" disabled>
                 Save to Journal
               </button>
+              <span class="input-hint input-hint--center" id="wizardHint" style="display: none;">
+                Tip: Shift+Click to save without wizard
+              </span>
             </div>
           </div>
 
@@ -536,6 +539,10 @@
             <div class="card__header">
               <span class="card__icon">📊</span>
               <h2 class="card__title">Active Trades</h2>
+              <span class="streak-display" id="streakDisplay" style="display: none;">
+                <span class="streak-display__flame">🔥</span>
+                <span class="streak-display__text" id="streakText">0 day streak</span>
+              </span>
               <span class="badge" id="activeTradeCount">0 open</span>
             </div>
             <div class="card__body">
@@ -677,6 +684,25 @@
           </label>
           <p class="input-hint">Show Discord alert parser</p>
         </div>
+      </div>
+
+      <!-- Journal Settings -->
+      <div class="settings-section">
+        <h3 class="settings-section__title">Journal Settings</h3>
+
+        <label class="toggle-switch">
+          <input type="checkbox" id="wizardEnabledToggle">
+          <span class="toggle-switch__slider"></span>
+          <span class="toggle-switch__label">Enable Trade Wizard</span>
+        </label>
+        <span class="input-hint">Step-by-step guided trade logging with thesis prompts</span>
+
+        <label class="toggle-switch" style="margin-top: var(--space-3);">
+          <input type="checkbox" id="celebrationsToggle" checked>
+          <span class="toggle-switch__slider"></span>
+          <span class="toggle-switch__label">Enable Celebrations</span>
+        </label>
+        <span class="input-hint">Confetti and achievements when logging trades</span>
       </div>
 
       <!-- Data Management -->
@@ -863,6 +889,278 @@
       <button class="btn btn--success" id="confirmTrimBtn">Confirm Close</button>
     </div>
   </div>
+
+  <!-- Trade Wizard Modal -->
+  <div class="modal-overlay" id="wizardModalOverlay"></div>
+  <div class="modal modal--wizard" id="wizardModal">
+    <div class="modal__header">
+      <h2 class="modal__title">Log Trade</h2>
+      <button class="icon-btn" id="closeWizardBtn" aria-label="Close wizard">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Wizard Progress -->
+    <div class="wizard-progress">
+      <div class="wizard-progress__step active" data-step="1">
+        <span class="wizard-progress__number">1</span>
+        <span class="wizard-progress__label">Details</span>
+      </div>
+      <div class="wizard-progress__connector"></div>
+      <div class="wizard-progress__step" data-step="2">
+        <span class="wizard-progress__number">2</span>
+        <span class="wizard-progress__label">Thesis</span>
+      </div>
+      <div class="wizard-progress__connector"></div>
+      <div class="wizard-progress__step" data-step="3">
+        <span class="wizard-progress__number">3</span>
+        <span class="wizard-progress__label">Tactics</span>
+      </div>
+      <div class="wizard-progress__connector"></div>
+      <div class="wizard-progress__step" data-step="4">
+        <span class="wizard-progress__number">4</span>
+        <span class="wizard-progress__label">Confirm</span>
+      </div>
+    </div>
+
+    <!-- Wizard Steps Container -->
+    <div class="wizard-steps">
+      <!-- Step 1: Trade Details -->
+      <div class="wizard-step active" data-step="1">
+        <div class="wizard-step__header">
+          <h3 class="wizard-step__title">Ready to log this trade?</h3>
+          <p class="wizard-step__subtitle">Review your trade details</p>
+        </div>
+
+        <div class="wizard-trade-summary">
+          <div class="wizard-trade-summary__ticker" id="wizardTicker">TICKER</div>
+          <div class="wizard-trade-summary__grid">
+            <div class="wizard-trade-summary__item">
+              <span class="wizard-trade-summary__label">Entry</span>
+              <span class="wizard-trade-summary__value" id="wizardEntry">$0.00</span>
+            </div>
+            <div class="wizard-trade-summary__item">
+              <span class="wizard-trade-summary__label">Stop</span>
+              <span class="wizard-trade-summary__value" id="wizardStop">$0.00</span>
+            </div>
+            <div class="wizard-trade-summary__item">
+              <span class="wizard-trade-summary__label">Shares</span>
+              <span class="wizard-trade-summary__value" id="wizardShares">0</span>
+            </div>
+            <div class="wizard-trade-summary__item">
+              <span class="wizard-trade-summary__label">Position</span>
+              <span class="wizard-trade-summary__value" id="wizardPosition">$0.00</span>
+            </div>
+            <div class="wizard-trade-summary__item wizard-trade-summary__item--risk">
+              <span class="wizard-trade-summary__label">Risk</span>
+              <span class="wizard-trade-summary__value" id="wizardRisk">$0.00</span>
+            </div>
+            <div class="wizard-trade-summary__item">
+              <span class="wizard-trade-summary__label">Target</span>
+              <span class="wizard-trade-summary__value" id="wizardTarget">—</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-step__actions">
+          <button class="btn btn--ghost" id="wizardSkipAll">Skip Wizard</button>
+          <button class="btn btn--primary" id="wizardNext1">Next</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Trade Thesis -->
+      <div class="wizard-step" data-step="2">
+        <div class="wizard-step__header">
+          <h3 class="wizard-step__title">What's your trade thesis?</h3>
+          <p class="wizard-step__subtitle">Optional but helps with analysis</p>
+        </div>
+
+        <div class="wizard-step__content">
+          <div class="input-group">
+            <label class="input-label">Setup Type</label>
+            <div class="wizard-btn-grid">
+              <button class="wizard-option-btn" data-setup="ep">EP</button>
+              <button class="wizard-option-btn" data-setup="flag">Flag</button>
+              <button class="wizard-option-btn" data-setup="base">Base</button>
+              <button class="wizard-option-btn" data-setup="breakout">Breakout</button>
+              <button class="wizard-option-btn" data-setup="bounce">Bounce</button>
+              <button class="wizard-option-btn" data-setup="other">Other</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="wizardTheme">Theme / Sector</label>
+            <input type="text" class="input" id="wizardTheme" placeholder="e.g. AI, EV, Semis...">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Conviction Level</label>
+            <div class="wizard-conviction">
+              <button class="wizard-star" data-conviction="1">★</button>
+              <button class="wizard-star" data-conviction="2">★</button>
+              <button class="wizard-star" data-conviction="3">★</button>
+              <button class="wizard-star" data-conviction="4">★</button>
+              <button class="wizard-star" data-conviction="5">★</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-step__actions">
+          <button class="btn btn--ghost" id="wizardBack2">Back</button>
+          <button class="btn btn--ghost" id="wizardSkip2">Skip</button>
+          <button class="btn btn--primary" id="wizardNext2">Next</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Entry Tactics -->
+      <div class="wizard-step" data-step="3">
+        <div class="wizard-step__header">
+          <h3 class="wizard-step__title">How are you entering?</h3>
+          <p class="wizard-step__subtitle">Document your entry approach</p>
+        </div>
+
+        <div class="wizard-step__content">
+          <div class="input-group">
+            <label class="input-label">Entry Type</label>
+            <div class="wizard-btn-grid wizard-btn-grid--3">
+              <button class="wizard-option-btn" data-entry-type="market">Market</button>
+              <button class="wizard-option-btn" data-entry-type="limit">Limit</button>
+              <button class="wizard-option-btn" data-entry-type="scale">Scale-in</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="wizardRiskReasoning">Risk Reasoning</label>
+            <textarea class="input input--textarea" id="wizardRiskReasoning" rows="3" placeholder="Why is this stop level appropriate? e.g. Below VWAP support, Under key level..."></textarea>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="wizardNotes">Additional Notes</label>
+            <textarea class="input input--textarea" id="wizardNotes" rows="2" placeholder="Anything else about this trade..."></textarea>
+          </div>
+        </div>
+
+        <div class="wizard-step__actions">
+          <button class="btn btn--ghost" id="wizardBack3">Back</button>
+          <button class="btn btn--ghost" id="wizardSkip3">Skip</button>
+          <button class="btn btn--primary" id="wizardNext3">Next</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Confirmation -->
+      <div class="wizard-step" data-step="4">
+        <div class="wizard-step__header">
+          <h3 class="wizard-step__title">Ready to log!</h3>
+          <p class="wizard-step__subtitle">Review and confirm your trade</p>
+        </div>
+
+        <div class="wizard-confirmation">
+          <div class="wizard-confirmation__ticker" id="wizardConfirmTicker">TICKER</div>
+
+          <div class="wizard-confirmation__details">
+            <div class="wizard-confirmation__row">
+              <span class="wizard-confirmation__label">Position</span>
+              <span class="wizard-confirmation__value" id="wizardConfirmPosition">0 shares @ $0.00</span>
+            </div>
+            <div class="wizard-confirmation__row">
+              <span class="wizard-confirmation__label">Risk</span>
+              <span class="wizard-confirmation__value wizard-confirmation__value--risk" id="wizardConfirmRisk">$0.00 (0%)</span>
+            </div>
+            <div class="wizard-confirmation__row" id="wizardConfirmSetupRow" style="display: none;">
+              <span class="wizard-confirmation__label">Setup</span>
+              <span class="wizard-confirmation__value" id="wizardConfirmSetup">—</span>
+            </div>
+            <div class="wizard-confirmation__row" id="wizardConfirmThemeRow" style="display: none;">
+              <span class="wizard-confirmation__label">Theme</span>
+              <span class="wizard-confirmation__value" id="wizardConfirmTheme">—</span>
+            </div>
+            <div class="wizard-confirmation__row" id="wizardConfirmEntryTypeRow" style="display: none;">
+              <span class="wizard-confirmation__label">Entry</span>
+              <span class="wizard-confirmation__value" id="wizardConfirmEntryType">—</span>
+            </div>
+            <div class="wizard-confirmation__row" id="wizardConfirmNotesRow" style="display: none;">
+              <span class="wizard-confirmation__label">Notes</span>
+              <span class="wizard-confirmation__value wizard-confirmation__value--notes" id="wizardConfirmNotes">—</span>
+            </div>
+          </div>
+
+          <!-- Streak Display -->
+          <div class="wizard-streak" id="wizardStreakDisplay" style="display: none;">
+            <span class="wizard-streak__flame">🔥</span>
+            <span class="wizard-streak__text" id="wizardStreakText">3 day streak!</span>
+          </div>
+        </div>
+
+        <div class="wizard-step__actions">
+          <button class="btn btn--ghost" id="wizardBack4">Back</button>
+          <button class="btn btn--success btn--pulse" id="wizardConfirmBtn">Log Trade</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Shift+Click hint -->
+    <div class="wizard-hint">
+      <span class="wizard-hint__text">Tip: Shift+Click "Save to Journal" to skip wizard</span>
+    </div>
+  </div>
+
+  <!-- Clear Data Confirmation Modal -->
+  <div class="modal-overlay" id="clearDataModalOverlay"></div>
+  <div class="modal modal--clear-data" id="clearDataModal">
+    <div class="modal__header">
+      <h2 class="modal__title">Clear All Data</h2>
+      <button class="icon-btn" id="closeClearDataBtn" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal__content">
+      <p class="clear-data__warning">This action cannot be undone. The following will be permanently deleted:</p>
+
+      <div class="clear-data__list">
+        <div class="clear-data__item clear-data__item--danger">
+          <span class="clear-data__icon">📊</span>
+          <div class="clear-data__details">
+            <span class="clear-data__label">Trade Journal</span>
+            <span class="clear-data__desc" id="clearDataTradeCount">All logged trades</span>
+          </div>
+        </div>
+        <div class="clear-data__item clear-data__item--danger">
+          <span class="clear-data__icon">🏆</span>
+          <div class="clear-data__details">
+            <span class="clear-data__label">Achievements & Streaks</span>
+            <span class="clear-data__desc" id="clearDataAchievementCount">All unlocked badges and progress</span>
+          </div>
+        </div>
+        <div class="clear-data__item clear-data__item--danger">
+          <span class="clear-data__icon">⚙️</span>
+          <div class="clear-data__details">
+            <span class="clear-data__label">Account Settings</span>
+            <span class="clear-data__desc">Account size, risk %, preferences</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="clear-data__keep">
+        <span class="clear-data__keep-label">Will be kept:</span>
+        <span class="clear-data__keep-item">🎨 Theme preference</span>
+      </div>
+    </div>
+
+    <div class="modal__footer">
+      <button type="button" class="btn btn--secondary" id="cancelClearDataBtn">Cancel</button>
+      <button type="button" class="btn btn--danger" id="confirmClearDataBtn">Delete Everything</button>
+    </div>
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
 
   <!-- Toast Notifications -->
   <div class="toast-container" id="toastContainer"></div>

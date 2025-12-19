@@ -33,6 +33,10 @@ class Settings {
       dynamicAccountToggle: document.getElementById('dynamicAccountToggle'),
       resetAccountBtn: document.getElementById('resetAccountBtn'),
 
+      // Journal settings
+      wizardEnabledToggle: document.getElementById('wizardEnabledToggle'),
+      celebrationsToggle: document.getElementById('celebrationsToggle'),
+
       // Summary
       summaryStarting: document.getElementById('summaryStarting'),
       summaryPnL: document.getElementById('summaryPnL'),
@@ -120,6 +124,20 @@ class Settings {
       });
     }
 
+    // Wizard enabled toggle
+    if (this.elements.wizardEnabledToggle) {
+      this.elements.wizardEnabledToggle.addEventListener('change', (e) => {
+        state.updateJournalMetaSettings({ wizardEnabled: e.target.checked });
+      });
+    }
+
+    // Celebrations toggle
+    if (this.elements.celebrationsToggle) {
+      this.elements.celebrationsToggle.addEventListener('change', (e) => {
+        state.updateJournalMetaSettings({ celebrationsEnabled: e.target.checked });
+      });
+    }
+
     // Reset account
     if (this.elements.resetAccountBtn) {
       this.elements.resetAccountBtn.addEventListener('click', () => this.resetAccount());
@@ -157,6 +175,10 @@ class Settings {
     // Load saved settings
     state.loadSettings();
     state.loadJournal();
+    state.loadJournalMeta();
+
+    // Migrate existing journal entries to new schema
+    state.migrateJournalEntries();
 
     // Apply theme
     const theme = state.settings.theme || 'dark';
@@ -168,6 +190,14 @@ class Settings {
     }
     if (this.elements.dynamicAccountToggle) {
       this.elements.dynamicAccountToggle.checked = state.settings.dynamicAccountEnabled;
+    }
+
+    // Apply journal settings
+    if (this.elements.wizardEnabledToggle) {
+      this.elements.wizardEnabledToggle.checked = state.journalMeta.settings.wizardEnabled;
+    }
+    if (this.elements.celebrationsToggle) {
+      this.elements.celebrationsToggle.checked = state.journalMeta.settings.celebrationsEnabled;
     }
 
     // Apply to main calculator

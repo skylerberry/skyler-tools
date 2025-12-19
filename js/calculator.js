@@ -253,6 +253,12 @@ class Calculator {
     let positionSize = shares * entry;
     let isLimited = false;
 
+    // Store original values before limiting
+    const originalPositionSize = positionSize;
+    const originalPercentOfAccount = (originalPositionSize / accountSize) * 100;
+    const originalRiskDollars = riskDollars;
+    const originalRiskPercent = riskPercent;
+
     // Apply max position limit
     const maxPosition = accountSize * (maxPositionPercent / 100);
     if (positionSize > maxPosition) {
@@ -262,6 +268,7 @@ class Calculator {
     }
 
     const actualRiskDollars = shares * riskPerShare;
+    const actualRiskPercent = (actualRiskDollars / accountSize) * 100;
     const stopDistance = (riskPerShare / entry) * 100;
     const percentOfAccount = (positionSize / accountSize) * 100;
 
@@ -292,7 +299,12 @@ class Calculator {
       profit,
       roi,
       isLimited,
-      percentOfAccount
+      percentOfAccount,
+      originalPositionSize,
+      originalPercentOfAccount,
+      originalRiskDollars,
+      originalRiskPercent,
+      actualRiskPercent
     };
 
     state.updateResults(results);
@@ -313,12 +325,39 @@ class Calculator {
       setTimeout(() => card.classList.remove('updated'), 300);
     });
 
-    // Primary results
-    if (this.elements.positionSize) this.elements.positionSize.textContent = formatCurrency(r.positionSize);
-    if (this.elements.positionPercent) this.elements.positionPercent.textContent = `${formatPercent(r.percentOfAccount)} of account`;
+    // Position Size - show strikethrough if limited
+    if (this.elements.positionSize) {
+      if (r.isLimited) {
+        this.elements.positionSize.innerHTML = `<span class="value--struck">${formatCurrency(r.originalPositionSize)}</span> ${formatCurrency(r.positionSize)}`;
+      } else {
+        this.elements.positionSize.textContent = formatCurrency(r.positionSize);
+      }
+    }
+    // Position % - show strikethrough if limited
+    if (this.elements.positionPercent) {
+      if (r.isLimited) {
+        this.elements.positionPercent.innerHTML = `<span class="value--struck">${formatPercent(r.originalPercentOfAccount)}</span> ${formatPercent(r.percentOfAccount)} of account`;
+      } else {
+        this.elements.positionPercent.textContent = `${formatPercent(r.percentOfAccount)} of account`;
+      }
+    }
     if (this.elements.shares) this.elements.shares.textContent = formatNumber(r.shares);
-    if (this.elements.riskAmount) this.elements.riskAmount.textContent = formatCurrency(r.riskDollars);
-    if (this.elements.riskPercentDisplay) this.elements.riskPercentDisplay.textContent = `${formatPercent(state.account.riskPercent)} of account`;
+    // Risk Amount - show strikethrough if limited
+    if (this.elements.riskAmount) {
+      if (r.isLimited) {
+        this.elements.riskAmount.innerHTML = `<span class="value--struck">${formatCurrency(r.originalRiskDollars)}</span> ${formatCurrency(r.riskDollars)}`;
+      } else {
+        this.elements.riskAmount.textContent = formatCurrency(r.riskDollars);
+      }
+    }
+    // Risk % - show strikethrough if limited
+    if (this.elements.riskPercentDisplay) {
+      if (r.isLimited) {
+        this.elements.riskPercentDisplay.innerHTML = `<span class="value--struck">${formatPercent(r.originalRiskPercent)}</span> ${formatPercent(r.actualRiskPercent)} of account`;
+      } else {
+        this.elements.riskPercentDisplay.textContent = `${formatPercent(r.actualRiskPercent)} of account`;
+      }
+    }
     if (this.elements.stopDistance) this.elements.stopDistance.textContent = formatPercent(r.stopDistance);
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${formatCurrency(r.stopPerShare)}/share`;
     if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;

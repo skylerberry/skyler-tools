@@ -101,6 +101,25 @@ const AppState = {
       entries: [],
       filter: 'all'
     },
+    journalMeta: {
+      achievements: {
+        unlocked: [],
+        progress: {
+          totalTrades: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          lastTradeDate: null,
+          tradesWithNotes: 0,
+          tradesWithThesis: 0,
+          completeWizardCount: 0
+        }
+      },
+      settings: {
+        wizardEnabled: false,
+        celebrationsEnabled: true
+      },
+      schemaVersion: 1
+    },
     ui: {
       scenariosExpanded: false,
       alertExpanded: false,
@@ -249,11 +268,192 @@ const AppState = {
     }
   },
 
+  // JournalMeta methods
+  updateJournalMetaSettings(updates) {
+    Object.assign(this.state.journalMeta.settings, updates);
+    this.saveJournalMeta();
+    this.emit('journalMetaSettingsChanged', this.state.journalMeta.settings);
+  },
+
+  updateStreak() {
+    const progress = this.state.journalMeta.achievements.progress;
+    const today = new Date().toDateString();
+    const lastDate = progress.lastTradeDate ? new Date(progress.lastTradeDate).toDateString() : null;
+
+    if (lastDate === today) return progress.currentStreak;
+
+    if (lastDate) {
+      const daysDiff = Math.floor(
+        (new Date(today) - new Date(lastDate)) / (1000 * 60 * 60 * 24)
+      );
+      progress.currentStreak = (daysDiff === 1) ? progress.currentStreak + 1 : 1;
+    } else {
+      progress.currentStreak = 1;
+    }
+
+    if (progress.currentStreak > progress.longestStreak) {
+      progress.longestStreak = progress.currentStreak;
+    }
+
+    progress.lastTradeDate = new Date().toISOString();
+    this.saveJournalMeta();
+    this.emit('streakUpdated', progress.currentStreak);
+    return progress.currentStreak;
+  },
+
+  unlockAchievement(id) {
+    const unlocked = this.state.journalMeta.achievements.unlocked;
+    if (!unlocked.find(a => a.id === id)) {
+      const achievement = { id, unlockedAt: new Date().toISOString(), notified: false };
+      unlocked.push(achievement);
+      this.saveJournalMeta();
+      this.emit('achievementUnlocked', achievement);
+      return achievement;
+    }
+    return null;
+  },
+
+  isAchievementUnlocked(id) {
+    return this.state.journalMeta.achievements.unlocked.some(a => a.id === id);
+  },
+
+  markAchievementNotified(id) {
+    const achievement = this.state.journalMeta.achievements.unlocked.find(a => a.id === id);
+    if (achievement) {
+      achievement.notified = true;
+      this.saveJournalMeta();
+    }
+  },
+
+  migrateJournalEntries() {
+    let migrated = false;
+    this.state.journal.entries = this.state.journal.entries.map(entry => {
+      if (!entry.hasOwnProperty('thesis')) {
+        migrated = true;
+        return { ...entry, thesis: null, wizardComplete: false, wizardSkipped: [] };
+      }
+      return entry;
+    });
+    if (migrated) {
+      this.saveJournal();
+      console.log('Migrated journal entries to new schema');
+    }
+  },
+
+  saveJournalMeta() {
+    try {
+      localStorage.setItem('riskCalcJournalMeta', JSON.stringify(this.state.journalMeta));
+    } catch (e) {
+      console.error('Failed to save journal meta:', e);
+    }
+  },
+
+  loadJournalMeta() {
+    try {
+      const saved = localStorage.getItem('riskCalcJournalMeta');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        this.state.journalMeta = {
+          achievements: {
+            unlocked: parsed.achievements?.unlocked || [],
+            progress: { ...this.state.journalMeta.achievements.progress, ...(parsed.achievements?.progress || {}) }
+          },
+          settings: { ...this.state.journalMeta.settings, ...(parsed.settings || {}) },
+          schemaVersion: parsed.schemaVersion || 1
+        };
+      }
+    } catch (e) {
+      console.error('Failed to load journal meta:', e);
+    }
+  },
+
+  // Recalculate progress from existing journal entries (for upgrades/migrations)
+  recalculateProgress() {
+    const entries = this.state.journal.entries;
+    if (entries.length === 0) return;
+
+    const progress = this.state.journalMeta.achievements.progress;
+
+    // Recalculate metrics
+    progress.totalTrades = entries.length;
+    progress.tradesWithNotes = entries.filter(e => e.notes && e.notes.trim()).length;
+    progress.tradesWithThesis = entries.filter(e =>
+      e.thesis && (e.thesis.setupType || e.thesis.theme || e.thesis.conviction ||
+                   e.thesis.entryType || e.thesis.riskReasoning)
+    ).length;
+    progress.completeWizardCount = entries.filter(e =>
+      e.wizardComplete && (!e.wizardSkipped || e.wizardSkipped.length === 0)
+    ).length;
+
+    // Find most recent trade date
+    const sorted = [...entries].sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+    if (sorted[0]) {
+      progress.lastTradeDate = sorted[0].timestamp;
+    }
+
+    // Recalculate streak from history
+    this.recalculateStreakFromHistory();
+    this.saveJournalMeta();
+  },
+
+  recalculateStreakFromHistory() {
+    const entries = [...this.state.journal.entries]
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    if (entries.length === 0) {
+      this.state.journalMeta.achievements.progress.currentStreak = 0;
+      return;
+    }
+
+    // Group trades by date
+    const tradesByDate = {};
+    entries.forEach(entry => {
+      const date = new Date(entry.timestamp).toDateString();
+      if (!tradesByDate[date]) tradesByDate[date] = true;
+    });
+
+    const tradeDates = Object.keys(tradesByDate).map(d => new Date(d)).sort((a, b) => a - b);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Count consecutive days backwards from today/yesterday
+    let streak = 0;
+    let checkDate = new Date(today);
+
+    // Check if traded today
+    const tradedToday = tradeDates.some(d => d.toDateString() === today.toDateString());
+    if (!tradedToday) {
+      // Check yesterday
+      checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    for (let i = tradeDates.length - 1; i >= 0; i--) {
+      const tradeDate = tradeDates[i];
+      tradeDate.setHours(0, 0, 0, 0);
+
+      if (tradeDate.getTime() === checkDate.getTime()) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (tradeDate.getTime() < checkDate.getTime()) {
+        break; // Gap found
+      }
+    }
+
+    this.state.journalMeta.achievements.progress.currentStreak = streak;
+    this.state.journalMeta.achievements.progress.longestStreak = Math.max(
+      this.state.journalMeta.achievements.progress.longestStreak,
+      streak
+    );
+  },
+
   get settings() { return this.state.settings; },
   get account() { return this.state.account; },
   get trade() { return this.state.trade; },
   get results() { return this.state.results; },
   get journal() { return this.state.journal; },
+  get journalMeta() { return this.state.journalMeta; },
   get ui() { return this.state.ui; }
 };
 
@@ -662,6 +862,8 @@ const Calculator = {
     const originalShares = shares;
     const originalPositionSize = positionSize;
     const originalPercentOfAccount = (originalPositionSize / accountSize) * 100;
+    const originalRiskDollars = riskDollars;
+    const originalRiskPercent = riskPercent;
 
     const maxPosition = accountSize * (maxPositionPercent / 100);
     if (positionSize > maxPosition) {
@@ -671,6 +873,7 @@ const Calculator = {
     }
 
     const actualRiskDollars = shares * riskPerShare;
+    const actualRiskPercent = (actualRiskDollars / accountSize) * 100;
     const stopDistance = (riskPerShare / entry) * 100;
     const percentOfAccount = (positionSize / accountSize) * 100;
 
@@ -685,7 +888,8 @@ const Calculator = {
     const results = {
       shares, positionSize, riskDollars: actualRiskDollars, stopDistance,
       stopPerShare: riskPerShare, rMultiple, target, profit, roi, targetProfitPerShare, isLimited, percentOfAccount,
-      originalPositionSize, originalPercentOfAccount
+      originalPositionSize, originalPercentOfAccount,
+      originalRiskDollars, originalRiskPercent, actualRiskPercent
     };
 
     AppState.updateResults(results);
@@ -715,14 +919,28 @@ const Calculator = {
     // % of Account - show strikethrough if limited
     if (this.elements.positionPercent) {
       if (r.isLimited) {
-        this.elements.positionPercent.innerHTML = `<span class="value--struck">${Utils.formatPercent(r.originalPercentOfAccount)}%</span> ${Utils.formatPercent(r.percentOfAccount)}% of account`;
+        this.elements.positionPercent.innerHTML = `<span class="value--struck">${Utils.formatPercent(r.originalPercentOfAccount)}</span> ${Utils.formatPercent(r.percentOfAccount)} of account`;
       } else {
         this.elements.positionPercent.textContent = `${Utils.formatPercent(r.percentOfAccount)} of account`;
       }
     }
     if (this.elements.shares) this.elements.shares.textContent = Utils.formatNumber(r.shares);
-    if (this.elements.riskAmount) this.elements.riskAmount.textContent = Utils.formatCurrency(r.riskDollars);
-    if (this.elements.riskPercentDisplay) this.elements.riskPercentDisplay.textContent = `${Utils.formatPercent(AppState.account.riskPercent)} of account`;
+    // Risk Amount - show strikethrough if limited
+    if (this.elements.riskAmount) {
+      if (r.isLimited) {
+        this.elements.riskAmount.innerHTML = `<span class="value--struck">${Utils.formatCurrency(r.originalRiskDollars)}</span> ${Utils.formatCurrency(r.riskDollars)}`;
+      } else {
+        this.elements.riskAmount.textContent = Utils.formatCurrency(r.riskDollars);
+      }
+    }
+    // Risk % - show strikethrough if limited
+    if (this.elements.riskPercentDisplay) {
+      if (r.isLimited) {
+        this.elements.riskPercentDisplay.innerHTML = `<span class="value--struck">${Utils.formatPercent(r.originalRiskPercent)}</span> ${Utils.formatPercent(r.actualRiskPercent)} of account`;
+      } else {
+        this.elements.riskPercentDisplay.textContent = `${Utils.formatPercent(r.actualRiskPercent)} of account`;
+      }
+    }
     if (this.elements.stopDistance) this.elements.stopDistance.textContent = Utils.formatPercent(r.stopDistance);
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${Utils.formatCurrency(r.stopPerShare)}/share`;
     if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;
@@ -1388,7 +1606,16 @@ const Journal = {
 
   bindEvents() {
     if (this.elements.logTradeBtn) {
-      this.elements.logTradeBtn.addEventListener('click', () => this.logTrade());
+      this.elements.logTradeBtn.addEventListener('click', (e) => {
+        // Shift+Click bypasses wizard for power users
+        if (e.shiftKey || !AppState.journalMeta.settings.wizardEnabled) {
+          this.directLogTrade();
+        } else {
+          Wizard.open();
+        }
+      });
+      // Add tooltip hint for Shift+Click bypass
+      this.elements.logTradeBtn.title = 'Shift+Click to save without wizard';
     }
     if (this.elements.viewJournalBtn) {
       this.elements.viewJournalBtn.addEventListener('click', () => this.openModal());
@@ -1412,7 +1639,8 @@ const Journal = {
     window.deleteTrade = (id) => this.deleteTrade(id);
   },
 
-  logTrade() {
+  // Direct save without wizard (used for Shift+Click or when wizard disabled)
+  directLogTrade() {
     const results = AppState.results;
     const trade = AppState.trade;
 
@@ -1435,13 +1663,44 @@ const Journal = {
       status: 'open',
       exitPrice: null,
       exitDate: null,
-      pnl: null
+      pnl: null,
+      // Thesis fields (null for direct save)
+      thesis: null,
+      wizardComplete: false,
+      wizardSkipped: []
     };
 
-    AppState.addJournalEntry(entry);
+    const newEntry = AppState.addJournalEntry(entry);
     if (this.elements.tradeNotes) this.elements.tradeNotes.value = '';
-    UI.showToast(`${entry.ticker} trade logged!`, 'success');
+
+    // Update progress stats
+    const progress = AppState.journalMeta.achievements.progress;
+    progress.totalTrades++;
+    if (entry.notes) {
+      progress.tradesWithNotes++;
+    }
+    AppState.updateStreak();
+    AppState.saveJournalMeta();
+
+    // Emit trade logged event for achievements
+    AppState.emit('tradeLogged', { entry: newEntry, wizardComplete: false, thesis: null });
+
+    // Show success toast with rotating messages
+    const messages = [
+      "Trade logged! Good luck!",
+      "Nice setup! Tracked.",
+      "You're on a roll! Trade saved.",
+      "Disciplined trader! Logged.",
+      "Trade captured! Let's go!"
+    ];
+    const message = messages[Math.floor(Math.random() * messages.length)];
+    UI.showToast(message, 'success');
     console.log(`📝 Trade logged: ${entry.ticker} | ${entry.shares} shares @ $${entry.entry} | Risk: $${entry.riskDollars.toFixed(2)}`);
+
+    // Trigger confetti if celebrations enabled
+    if (AppState.journalMeta.settings.celebrationsEnabled) {
+      AppState.emit('triggerConfetti');
+    }
 
     // Stop pulsing after trade is saved
     FocusManager.stopPulse();
@@ -1465,6 +1724,7 @@ const Journal = {
   render() {
     this.renderActiveTrades();
     this.renderRiskSummary();
+    this.renderStreak();
   },
 
   renderActiveTrades() {
@@ -1560,6 +1820,31 @@ const Journal = {
       <span class="risk-summary__value">${Utils.formatCurrency(totalRisk)}</span>
       <span class="risk-summary__percent">(${Utils.formatPercent(riskPercent)})</span>
       <span class="risk-summary__indicator risk-summary__indicator--${level}">${level.toUpperCase()}</span>`;
+  },
+
+  renderStreak() {
+    const streakDisplay = document.getElementById('streakDisplay');
+    const streakText = document.getElementById('streakText');
+    if (!streakDisplay || !streakText) return;
+
+    const streak = AppState.journalMeta.achievements.progress.currentStreak;
+
+    if (streak === 0) {
+      streakDisplay.style.display = 'none';
+      return;
+    }
+
+    streakDisplay.style.display = 'flex';
+    streakText.textContent = streak === 1 ? '1 day streak' : `${streak} day streak`;
+
+    // Set data attribute for CSS styling intensity
+    if (streak >= 7) {
+      streakDisplay.setAttribute('data-streak', '7+');
+    } else if (streak >= 3) {
+      streakDisplay.setAttribute('data-streak', '3-6');
+    } else {
+      streakDisplay.setAttribute('data-streak', '1-2');
+    }
   },
 
   openModal() {
@@ -1724,12 +2009,14 @@ const DataManager = {
   },
 
   clearAllData() {
-    if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) return;
-    if (!confirm('This will delete all trades and reset settings. Continue?')) return;
+    ClearDataModal.open();
+  },
 
+  confirmClearAllData() {
     // Clear localStorage
     localStorage.removeItem('riskCalcSettings');
     localStorage.removeItem('riskCalcJournal');
+    localStorage.removeItem('riskCalcJournalMeta');
 
     // Reset state
     AppState.state.settings = {
@@ -1748,11 +2035,33 @@ const DataManager = {
     };
     AppState.state.journal.entries = [];
 
+    // Reset achievements & progress
+    AppState.state.journalMeta = {
+      achievements: {
+        unlocked: [],
+        progress: {
+          totalTrades: 0,
+          currentStreak: 0,
+          longestStreak: 0,
+          lastTradeDate: null,
+          tradesWithNotes: 0,
+          tradesWithThesis: 0,
+          completeWizardCount: 0
+        }
+      },
+      settings: {
+        wizardEnabled: false,
+        celebrationsEnabled: true
+      },
+      schemaVersion: 1
+    };
+
     // Refresh UI
     Settings.loadAndApply();
     Calculator.calculate();
     Journal.render();
 
+    ClearDataModal.close();
     UI.showToast('All data cleared', 'success');
     console.log('⚠️ All data cleared - reset to defaults');
   },
@@ -1926,7 +2235,10 @@ const Settings = {
       // SAR Member toggle
       sarMemberToggle: document.getElementById('sarMemberToggle'),
       discordDropZone: document.getElementById('discordDropZone'),
-      welcomeDiscordHint: document.querySelector('.welcome-card__hint-discord')
+      welcomeDiscordHint: document.querySelector('.welcome-card__hint-discord'),
+      // Journal/Wizard settings
+      wizardEnabledToggle: document.getElementById('wizardEnabledToggle'),
+      celebrationsToggle: document.getElementById('celebrationsToggle')
     };
   },
 
@@ -2049,6 +2361,19 @@ const Settings = {
       });
     }
 
+    // Journal/Wizard toggles
+    if (this.elements.wizardEnabledToggle) {
+      this.elements.wizardEnabledToggle.addEventListener('change', (e) => {
+        AppState.updateJournalMetaSettings({ wizardEnabled: e.target.checked });
+        this.updateWizardHint(e.target.checked);
+      });
+    }
+    if (this.elements.celebrationsToggle) {
+      this.elements.celebrationsToggle.addEventListener('change', (e) => {
+        AppState.updateJournalMetaSettings({ celebrationsEnabled: e.target.checked });
+      });
+    }
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
@@ -2083,6 +2408,12 @@ const Settings = {
   loadAndApply() {
     AppState.loadSettings();
     AppState.loadJournal();
+    AppState.loadJournalMeta();
+
+    // Recalculate progress from existing entries (handles upgrades/migrations)
+    if (AppState.journal.entries.length > 0) {
+      AppState.recalculateProgress();
+    }
 
     // Theme is already set by preload script in HTML head. Just sync AppState.
     const theme = document.documentElement.dataset.theme || 'dark';
@@ -2111,7 +2442,25 @@ const Settings = {
     }
     this.toggleDiscordDropZone(isSarMember);
 
+    // Journal/Wizard toggles
+    if (this.elements.wizardEnabledToggle) {
+      this.elements.wizardEnabledToggle.checked = AppState.journalMeta.settings.wizardEnabled;
+    }
+    if (this.elements.celebrationsToggle) {
+      this.elements.celebrationsToggle.checked = AppState.journalMeta.settings.celebrationsEnabled;
+    }
+
+    // Show/hide wizard hint based on setting
+    this.updateWizardHint(AppState.journalMeta.settings.wizardEnabled);
+
     this.updateAccountDisplay(AppState.account.currentSize);
+  },
+
+  updateWizardHint(wizardEnabled) {
+    const hint = document.getElementById('wizardHint');
+    if (hint) {
+      hint.style.display = wizardEnabled ? 'block' : 'none';
+    }
   },
 
   toggleDiscordDropZone(show) {
@@ -2334,6 +2683,580 @@ const FocusManager = {
 };
 
 // ============================================
+// Trade Wizard
+// ============================================
+
+const Wizard = {
+  elements: {},
+  currentStep: 1,
+  totalSteps: 4,
+  skippedSteps: [],
+  thesis: { setupType: null, theme: null, conviction: null, entryType: null, riskReasoning: null },
+  notes: '',
+
+  init() {
+    this.cacheElements();
+    this.bindEvents();
+  },
+
+  cacheElements() {
+    this.elements = {
+      modal: document.getElementById('wizardModal'),
+      overlay: document.getElementById('wizardModalOverlay'),
+      closeBtn: document.getElementById('closeWizardBtn'),
+      progressSteps: document.querySelectorAll('.wizard-progress__step'),
+      steps: document.querySelectorAll('.wizard-step'),
+      wizardTicker: document.getElementById('wizardTicker'),
+      wizardEntry: document.getElementById('wizardEntry'),
+      wizardStop: document.getElementById('wizardStop'),
+      wizardShares: document.getElementById('wizardShares'),
+      wizardPosition: document.getElementById('wizardPosition'),
+      wizardRisk: document.getElementById('wizardRisk'),
+      wizardTarget: document.getElementById('wizardTarget'),
+      skipAllBtn: document.getElementById('wizardSkipAll'),
+      next1Btn: document.getElementById('wizardNext1'),
+      setupBtns: document.querySelectorAll('[data-setup]'),
+      themeInput: document.getElementById('wizardTheme'),
+      convictionStars: document.querySelectorAll('.wizard-star'),
+      back2Btn: document.getElementById('wizardBack2'),
+      skip2Btn: document.getElementById('wizardSkip2'),
+      next2Btn: document.getElementById('wizardNext2'),
+      entryTypeBtns: document.querySelectorAll('[data-entry-type]'),
+      riskReasoningInput: document.getElementById('wizardRiskReasoning'),
+      notesInput: document.getElementById('wizardNotes'),
+      back3Btn: document.getElementById('wizardBack3'),
+      skip3Btn: document.getElementById('wizardSkip3'),
+      next3Btn: document.getElementById('wizardNext3'),
+      confirmTicker: document.getElementById('wizardConfirmTicker'),
+      confirmPosition: document.getElementById('wizardConfirmPosition'),
+      confirmRisk: document.getElementById('wizardConfirmRisk'),
+      confirmSetupRow: document.getElementById('wizardConfirmSetupRow'),
+      confirmSetup: document.getElementById('wizardConfirmSetup'),
+      confirmThemeRow: document.getElementById('wizardConfirmThemeRow'),
+      confirmTheme: document.getElementById('wizardConfirmTheme'),
+      confirmEntryTypeRow: document.getElementById('wizardConfirmEntryTypeRow'),
+      confirmEntryType: document.getElementById('wizardConfirmEntryType'),
+      confirmNotesRow: document.getElementById('wizardConfirmNotesRow'),
+      confirmNotes: document.getElementById('wizardConfirmNotes'),
+      streakDisplay: document.getElementById('wizardStreakDisplay'),
+      streakText: document.getElementById('wizardStreakText'),
+      back4Btn: document.getElementById('wizardBack4'),
+      confirmBtn: document.getElementById('wizardConfirmBtn')
+    };
+  },
+
+  bindEvents() {
+    this.elements.closeBtn?.addEventListener('click', () => this.close());
+    this.elements.overlay?.addEventListener('click', () => this.close());
+
+    document.addEventListener('keydown', (e) => {
+      if (!this.isOpen()) return;
+      if (e.key === 'Escape') this.close();
+    });
+
+    this.elements.skipAllBtn?.addEventListener('click', () => this.skipAll());
+    this.elements.next1Btn?.addEventListener('click', () => this.goToStep(2));
+    this.elements.back2Btn?.addEventListener('click', () => this.goToStep(1));
+    this.elements.skip2Btn?.addEventListener('click', () => this.skipStep(2));
+    this.elements.next2Btn?.addEventListener('click', () => this.goToStep(3));
+    this.elements.back3Btn?.addEventListener('click', () => this.goToStep(2));
+    this.elements.skip3Btn?.addEventListener('click', () => this.skipStep(3));
+    this.elements.next3Btn?.addEventListener('click', () => this.goToStep(4));
+    this.elements.back4Btn?.addEventListener('click', () => this.goToStep(3));
+    this.elements.confirmBtn?.addEventListener('click', () => this.confirmTrade());
+
+    this.elements.setupBtns?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.elements.setupBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.thesis.setupType = btn.dataset.setup;
+      });
+    });
+
+    this.elements.entryTypeBtns?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.elements.entryTypeBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.thesis.entryType = btn.dataset.entryType;
+      });
+    });
+
+    this.elements.convictionStars?.forEach(star => {
+      star.addEventListener('click', () => {
+        const level = parseInt(star.dataset.conviction);
+        this.thesis.conviction = level;
+        this.elements.convictionStars.forEach((s, i) => s.classList.toggle('active', i < level));
+      });
+    });
+  },
+
+  isOpen() { return this.elements.modal?.classList.contains('open'); },
+
+  open() {
+    if (!this.elements.modal) return;
+    this.currentStep = 1;
+    this.skippedSteps = [];
+    this.thesis = { setupType: null, theme: null, conviction: null, entryType: null, riskReasoning: null };
+    this.notes = '';
+    this.resetForm();
+    this.prefillFromCalculator();
+    this.elements.modal.classList.add('open');
+    this.elements.overlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    this.showStep(1);
+  },
+
+  close() {
+    this.elements.modal?.classList.remove('open');
+    this.elements.overlay?.classList.remove('open');
+    document.body.style.overflow = '';
+  },
+
+  resetForm() {
+    this.elements.setupBtns?.forEach(b => b.classList.remove('active'));
+    this.elements.entryTypeBtns?.forEach(b => b.classList.remove('active'));
+    this.elements.convictionStars?.forEach(s => s.classList.remove('active'));
+    if (this.elements.themeInput) this.elements.themeInput.value = '';
+    if (this.elements.riskReasoningInput) this.elements.riskReasoningInput.value = '';
+    if (this.elements.notesInput) this.elements.notesInput.value = '';
+    this.elements.progressSteps?.forEach(step => step.classList.remove('active', 'completed'));
+    this.elements.progressSteps?.[0]?.classList.add('active');
+  },
+
+  prefillFromCalculator() {
+    const trade = AppState.trade;
+    const results = AppState.results;
+    const account = AppState.account;
+
+    if (this.elements.wizardTicker) this.elements.wizardTicker.textContent = trade.ticker || 'TICKER';
+    if (this.elements.wizardEntry) this.elements.wizardEntry.textContent = Utils.formatCurrency(trade.entry || 0);
+    if (this.elements.wizardStop) this.elements.wizardStop.textContent = Utils.formatCurrency(trade.stop || 0);
+    if (this.elements.wizardShares) this.elements.wizardShares.textContent = Utils.formatNumber(results.shares || 0);
+    if (this.elements.wizardPosition) this.elements.wizardPosition.textContent = Utils.formatCurrency(results.positionSize || 0);
+    if (this.elements.wizardRisk) this.elements.wizardRisk.textContent = Utils.formatCurrency(results.riskDollars || 0);
+    if (this.elements.wizardTarget) this.elements.wizardTarget.textContent = trade.target ? Utils.formatCurrency(trade.target) : '—';
+    if (this.elements.confirmTicker) this.elements.confirmTicker.textContent = trade.ticker || 'TICKER';
+    if (this.elements.confirmPosition) this.elements.confirmPosition.textContent = `${Utils.formatNumber(results.shares || 0)} shares @ ${Utils.formatCurrency(trade.entry || 0)}`;
+    if (this.elements.confirmRisk) this.elements.confirmRisk.textContent = `${Utils.formatCurrency(results.riskDollars || 0)} (${Utils.formatPercent(account.riskPercent || 0)})`;
+  },
+
+  showStep(step) {
+    const prevStep = this.currentStep;
+    this.currentStep = step;
+
+    this.elements.steps?.forEach((stepEl, i) => {
+      const stepNum = i + 1;
+      stepEl.classList.remove('active', 'exit-left', 'exit-right');
+
+      if (stepNum === step) {
+        stepEl.classList.add('active');
+      } else if (stepNum === prevStep) {
+        // Add exit animation for the previous step
+        stepEl.classList.add(step > prevStep ? 'exit-left' : 'exit-right');
+      }
+    });
+
+    this.elements.progressSteps?.forEach((progressStep, i) => {
+      progressStep.classList.remove('active', 'completed');
+      if ((i + 1) < step) progressStep.classList.add('completed');
+      else if ((i + 1) === step) progressStep.classList.add('active');
+    });
+
+    if (step === 4) this.updateConfirmation();
+  },
+
+  goToStep(step) {
+    if (step < 1 || step > this.totalSteps) return;
+    this.collectStepData();
+    this.showStep(step);
+  },
+
+  skipStep(step) {
+    if (!this.skippedSteps.includes(step)) this.skippedSteps.push(step);
+    this.goToStep(step + 1);
+  },
+
+  skipAll() {
+    Journal.directLogTrade();
+    this.close();
+  },
+
+  collectStepData() {
+    if (this.currentStep === 2) this.thesis.theme = this.elements.themeInput?.value.trim() || null;
+    if (this.currentStep === 3) {
+      this.thesis.riskReasoning = this.elements.riskReasoningInput?.value.trim() || null;
+      this.notes = this.elements.notesInput?.value.trim() || '';
+    }
+  },
+
+  updateConfirmation() {
+    if (this.thesis.setupType) {
+      this.elements.confirmSetupRow.style.display = 'flex';
+      this.elements.confirmSetup.textContent = this.thesis.setupType.toUpperCase();
+    } else {
+      this.elements.confirmSetupRow.style.display = 'none';
+    }
+    if (this.thesis.theme) {
+      this.elements.confirmThemeRow.style.display = 'flex';
+      this.elements.confirmTheme.textContent = this.thesis.theme;
+    } else {
+      this.elements.confirmThemeRow.style.display = 'none';
+    }
+    if (this.thesis.entryType) {
+      this.elements.confirmEntryTypeRow.style.display = 'flex';
+      this.elements.confirmEntryType.textContent = this.thesis.entryType.charAt(0).toUpperCase() + this.thesis.entryType.slice(1);
+    } else {
+      this.elements.confirmEntryTypeRow.style.display = 'none';
+    }
+
+    // Show notes if provided
+    if (this.notes && this.notes.trim()) {
+      this.elements.confirmNotesRow.style.display = 'flex';
+      // Truncate long notes for display
+      const displayNotes = this.notes.length > 60 ? this.notes.substring(0, 60) + '...' : this.notes;
+      this.elements.confirmNotes.textContent = displayNotes;
+    } else {
+      this.elements.confirmNotesRow.style.display = 'none';
+    }
+
+    const progress = AppState.journalMeta.achievements.progress;
+    const today = new Date().toDateString();
+    const lastDate = progress.lastTradeDate ? new Date(progress.lastTradeDate).toDateString() : null;
+
+    if (lastDate !== today && progress.currentStreak > 0) {
+      this.elements.streakDisplay.style.display = 'flex';
+      this.elements.streakText.textContent = `${progress.currentStreak + 1} day streak!`;
+    } else if (!lastDate) {
+      this.elements.streakDisplay.style.display = 'flex';
+      this.elements.streakText.textContent = 'Start your streak!';
+    } else {
+      this.elements.streakDisplay.style.display = 'none';
+    }
+  },
+
+  confirmTrade() {
+    this.collectStepData();
+    this.logTradeWithWizard();
+    this.close();
+  },
+
+  hasThesisData() {
+    return this.thesis.setupType || this.thesis.theme || this.thesis.conviction || this.thesis.entryType || this.thesis.riskReasoning;
+  },
+
+  logTradeWithWizard() {
+    const trade = AppState.trade;
+    const results = AppState.results;
+    const account = AppState.account;
+
+    const entry = {
+      ticker: trade.ticker || 'UNKNOWN',
+      entry: trade.entry,
+      stop: trade.stop,
+      target: trade.target,
+      shares: results.shares,
+      positionSize: results.positionSize,
+      riskDollars: results.riskDollars,
+      riskPercent: account.riskPercent,
+      stopDistance: results.stopDistance,
+      notes: this.notes || Journal.elements.tradeNotes?.value || '',
+      status: 'open',
+      thesis: this.hasThesisData() ? { ...this.thesis } : null,
+      wizardComplete: true,
+      wizardSkipped: [...this.skippedSteps]
+    };
+
+    AppState.addJournalEntry(entry);
+    if (Journal.elements.tradeNotes) Journal.elements.tradeNotes.value = '';
+
+    // Update progress
+    const progress = AppState.journalMeta.achievements.progress;
+    progress.totalTrades++;
+    if (this.notes) progress.tradesWithNotes++;
+    if (this.hasThesisData()) progress.tradesWithThesis++;
+    if (this.skippedSteps.length === 0) progress.completeWizardCount++;
+
+    AppState.updateStreak();
+    AppState.saveJournalMeta();
+
+    AppState.emit('tradeLogged', { entry, wizardComplete: true });
+    Confetti.burst();
+    Achievements.check();
+
+    this.showSuccessToast();
+    FocusManager.stopPulse();
+  },
+
+  showSuccessToast() {
+    const messages = ["Trade logged! Good luck!", "Nice setup! Tracked.", "You're on a roll! Trade saved.", "Disciplined trader! Logged.", "Trade captured! Let's go!"];
+    UI.showToast(messages[Math.floor(Math.random() * messages.length)], 'success');
+  }
+};
+
+// ============================================
+// Confetti System
+// ============================================
+
+const Confetti = {
+  canvas: null,
+  ctx: null,
+  particles: [],
+  animationId: null,
+  colors: ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6'],
+
+  init() {
+    this.canvas = document.getElementById('confettiCanvas');
+    if (this.canvas) {
+      this.ctx = this.canvas.getContext('2d');
+      this.resize();
+      window.addEventListener('resize', () => this.resize());
+    }
+  },
+
+  resize() {
+    if (!this.canvas) return;
+    this.canvas.width = window.innerWidth;
+    this.canvas.height = window.innerHeight;
+  },
+
+  burst(particleCount = 100) {
+    if (!this.canvas || !this.ctx) return;
+    if (!AppState.journalMeta.settings.celebrationsEnabled) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // Create particles from multiple origin points for better spread
+    const origins = [
+      { x: this.canvas.width * 0.2, y: this.canvas.height * 0.25 },
+      { x: this.canvas.width * 0.35, y: this.canvas.height * 0.15 },
+      { x: this.canvas.width * 0.5, y: this.canvas.height * 0.1 },
+      { x: this.canvas.width * 0.65, y: this.canvas.height * 0.15 },
+      { x: this.canvas.width * 0.8, y: this.canvas.height * 0.25 }
+    ];
+
+    // Staggered waves for drawn-out celebration effect
+    const waves = 4;
+    const particlesPerWave = Math.ceil(particleCount / waves);
+
+    for (let wave = 0; wave < waves; wave++) {
+      setTimeout(() => {
+        for (let i = 0; i < particlesPerWave; i++) {
+          const origin = origins[Math.floor(Math.random() * origins.length)];
+          this.particles.push(this.createParticle(origin.x, origin.y));
+        }
+        if (!this.animationId) this.animate();
+      }, wave * 150); // 150ms between waves
+    }
+  },
+
+  createParticle(x, y) {
+    const angle = Math.random() * Math.PI * 2;
+    const velocity = 6 + Math.random() * 8; // Faster initial burst
+    return {
+      x, y,
+      vx: Math.cos(angle) * velocity,
+      vy: Math.sin(angle) * velocity - 4, // Stronger upward bias
+      size: 8 + Math.random() * 6, // Slightly larger
+      color: this.colors[Math.floor(Math.random() * this.colors.length)],
+      rotation: Math.random() * 360,
+      rotationSpeed: (Math.random() - 0.5) * 15,
+      opacity: 1,
+      gravity: 0.12,
+      friction: 0.985, // Less friction = longer travel
+      shape: Math.random() > 0.5 ? 'rect' : 'circle'
+    };
+  },
+
+  animate() {
+    if (!this.ctx || !this.canvas) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.vy += p.gravity;
+      p.vx *= p.friction;
+      p.vy *= p.friction;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rotation += p.rotationSpeed;
+      p.opacity -= 0.006; // Slower fade for longer celebration
+
+      if (p.opacity > 0) {
+        this.ctx.save();
+        this.ctx.translate(p.x, p.y);
+        this.ctx.rotate((p.rotation * Math.PI) / 180);
+        this.ctx.globalAlpha = p.opacity;
+        this.ctx.fillStyle = p.color;
+        if (p.shape === 'rect') {
+          this.ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        } else {
+          this.ctx.beginPath();
+          this.ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+        this.ctx.restore();
+      } else {
+        this.particles.splice(i, 1);
+      }
+    }
+
+    if (this.particles.length > 0) {
+      this.animationId = requestAnimationFrame(() => this.animate());
+    } else {
+      this.animationId = null;
+    }
+  }
+};
+
+// Debug function for testing confetti (call from browser console)
+window.testConfetti = (count) => {
+  // Temporarily bypass the celebrations check for testing
+  const original = AppState.journalMeta.settings.celebrationsEnabled;
+  AppState.journalMeta.settings.celebrationsEnabled = true;
+  Confetti.burst(count || 100);
+  AppState.journalMeta.settings.celebrationsEnabled = original;
+  console.log(`🎉 Confetti burst: ${count || 100} particles`);
+};
+
+// ============================================
+// Clear Data Modal
+// ============================================
+
+const ClearDataModal = {
+  elements: {},
+
+  init() {
+    this.elements = {
+      modal: document.getElementById('clearDataModal'),
+      overlay: document.getElementById('clearDataModalOverlay'),
+      closeBtn: document.getElementById('closeClearDataBtn'),
+      cancelBtn: document.getElementById('cancelClearDataBtn'),
+      confirmBtn: document.getElementById('confirmClearDataBtn'),
+      tradeCount: document.getElementById('clearDataTradeCount'),
+      achievementCount: document.getElementById('clearDataAchievementCount')
+    };
+
+    this.bindEvents();
+  },
+
+  bindEvents() {
+    this.elements.closeBtn?.addEventListener('click', () => this.close());
+    this.elements.overlay?.addEventListener('click', () => this.close());
+    this.elements.cancelBtn?.addEventListener('click', () => this.close());
+    this.elements.confirmBtn?.addEventListener('click', () => DataManager.confirmClearAllData());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isOpen()) this.close();
+    });
+  },
+
+  isOpen() {
+    return this.elements.modal?.classList.contains('open');
+  },
+
+  open() {
+    if (!this.elements.modal) return;
+
+    // Update counts
+    const tradeCount = AppState.journal.entries.length;
+    const achievementCount = AppState.journalMeta.achievements.unlocked.length;
+    const streak = AppState.journalMeta.achievements.progress.currentStreak;
+
+    if (this.elements.tradeCount) {
+      this.elements.tradeCount.textContent = tradeCount === 0
+        ? 'No trades logged'
+        : `${tradeCount} trade${tradeCount !== 1 ? 's' : ''} will be deleted`;
+    }
+
+    if (this.elements.achievementCount) {
+      const parts = [];
+      if (achievementCount > 0) parts.push(`${achievementCount} badge${achievementCount !== 1 ? 's' : ''}`);
+      if (streak > 0) parts.push(`${streak}-day streak`);
+      this.elements.achievementCount.textContent = parts.length > 0
+        ? parts.join(' and ') + ' will be reset'
+        : 'No achievements unlocked';
+    }
+
+    this.elements.modal.classList.add('open');
+    this.elements.overlay?.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    this.elements.modal?.classList.remove('open');
+    this.elements.overlay?.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+};
+
+// ============================================
+// Achievements System
+// ============================================
+
+const Achievements = {
+  definitions: {
+    first_steps: { id: 'first_steps', name: 'First Steps', description: 'Log your first trade', icon: '🎯', check: (p) => p.totalTrades >= 1 },
+    day_one: { id: 'day_one', name: 'Day One', description: 'Log a trade today', icon: '📅', check: (p) => { const today = new Date().toDateString(); const lastDate = p.lastTradeDate ? new Date(p.lastTradeDate).toDateString() : null; return lastDate === today; } },
+    hot_streak: { id: 'hot_streak', name: 'Hot Streak', description: '3-day logging streak', icon: '🔥', check: (p) => p.currentStreak >= 3 }
+  },
+  queue: [],
+
+  init() {},
+
+  check() {
+    const progress = AppState.journalMeta.achievements.progress;
+    Object.values(this.definitions).forEach(achievement => {
+      if (AppState.isAchievementUnlocked(achievement.id)) return;
+      if (achievement.check(progress)) this.unlock(achievement);
+    });
+  },
+
+  unlock(achievement) {
+    const unlocked = AppState.unlockAchievement(achievement.id);
+    if (unlocked && AppState.journalMeta.settings.celebrationsEnabled) {
+      this.queue.push(achievement);
+      if (this.queue.length === 1) this.showNext();
+    }
+  },
+
+  showNext() {
+    if (this.queue.length === 0) return;
+    const achievement = this.queue[0];
+    this.showAchievementToast(achievement);
+    AppState.markAchievementNotified(achievement.id);
+    setTimeout(() => {
+      this.queue.shift();
+      if (this.queue.length > 0) this.showNext();
+    }, 3500);
+  },
+
+  showAchievementToast(achievement) {
+    const container = document.getElementById('toastContainerTop') || document.getElementById('toastContainer');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = 'toast toast--achievement';
+    toast.innerHTML = `
+      <span class="toast__icon">${achievement.icon}</span>
+      <div class="toast__content">
+        <strong class="toast__title">Achievement Unlocked!</strong>
+        <span class="toast__text">${achievement.name}</span>
+      </div>
+      <button class="toast__close" aria-label="Close">×</button>
+    `;
+    toast.querySelector('.toast__close')?.addEventListener('click', () => {
+      toast.classList.add('toast--hiding');
+      setTimeout(() => toast.remove(), 300);
+    });
+    container.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.classList.add('toast--hiding');
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 3000);
+  }
+};
+
+// ============================================
 // Initialize App
 // ============================================
 
@@ -2354,6 +3277,13 @@ function initApp() {
 
   TrimModal.init();
   console.log('✅ Trim modal loaded');
+
+  // Initialize wizard, confetti, achievements, and modals
+  Wizard.init();
+  Confetti.init();
+  Achievements.init();
+  ClearDataModal.init();
+  console.log('✅ Trade wizard & achievements ready');
 
   SettingsToggle.init();
   FocusManager.init();

@@ -48,6 +48,27 @@ class AppState {
         filter: 'all'
       },
 
+      // Journal meta: achievements, streaks, wizard settings
+      journalMeta: {
+        achievements: {
+          unlocked: [], // { id, unlockedAt, notified }
+          progress: {
+            totalTrades: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            lastTradeDate: null,
+            tradesWithNotes: 0,
+            tradesWithThesis: 0,
+            completeWizardCount: 0
+          }
+        },
+        settings: {
+          wizardEnabled: false,  // Default OFF for existing users
+          celebrationsEnabled: true
+        },
+        schemaVersion: 1
+      },
+
       ui: {
         scenariosExpanded: false,
         alertExpanded: false,
@@ -216,12 +237,155 @@ class AppState {
     }
   }
 
+  // JournalMeta methods
+  updateJournalMeta(updates) {
+    Object.assign(this.state.journalMeta, updates);
+    this.saveJournalMeta();
+    this.emit('journalMetaChanged', this.state.journalMeta);
+  }
+
+  updateJournalMetaSettings(updates) {
+    Object.assign(this.state.journalMeta.settings, updates);
+    this.saveJournalMeta();
+    this.emit('journalMetaSettingsChanged', this.state.journalMeta.settings);
+  }
+
+  updateProgress(key, value) {
+    this.state.journalMeta.achievements.progress[key] = value;
+    this.saveJournalMeta();
+  }
+
+  // Streak calculation (calendar days)
+  updateStreak() {
+    const progress = this.state.journalMeta.achievements.progress;
+    const today = new Date().toDateString();
+    const lastDate = progress.lastTradeDate ? new Date(progress.lastTradeDate).toDateString() : null;
+
+    if (lastDate === today) {
+      // Same day, don't increment
+      return progress.currentStreak;
+    }
+
+    if (lastDate) {
+      const daysDiff = Math.floor(
+        (new Date(today) - new Date(lastDate)) / (1000 * 60 * 60 * 24)
+      );
+
+      if (daysDiff === 1) {
+        // Consecutive day
+        progress.currentStreak += 1;
+      } else {
+        // Streak broken, reset to 1
+        progress.currentStreak = 1;
+      }
+    } else {
+      // First trade ever
+      progress.currentStreak = 1;
+    }
+
+    // Update longest streak
+    if (progress.currentStreak > progress.longestStreak) {
+      progress.longestStreak = progress.currentStreak;
+    }
+
+    progress.lastTradeDate = new Date().toISOString();
+    this.saveJournalMeta();
+    this.emit('streakUpdated', progress.currentStreak);
+    return progress.currentStreak;
+  }
+
+  // Achievement methods
+  unlockAchievement(id) {
+    const unlocked = this.state.journalMeta.achievements.unlocked;
+    if (!unlocked.find(a => a.id === id)) {
+      const achievement = {
+        id,
+        unlockedAt: new Date().toISOString(),
+        notified: false
+      };
+      unlocked.push(achievement);
+      this.saveJournalMeta();
+      this.emit('achievementUnlocked', achievement);
+      return achievement;
+    }
+    return null;
+  }
+
+  isAchievementUnlocked(id) {
+    return this.state.journalMeta.achievements.unlocked.some(a => a.id === id);
+  }
+
+  markAchievementNotified(id) {
+    const achievement = this.state.journalMeta.achievements.unlocked.find(a => a.id === id);
+    if (achievement) {
+      achievement.notified = true;
+      this.saveJournalMeta();
+    }
+  }
+
+  // Migration helper for existing journal entries
+  migrateJournalEntries() {
+    let migrated = false;
+    this.state.journal.entries = this.state.journal.entries.map(entry => {
+      if (!entry.hasOwnProperty('thesis')) {
+        migrated = true;
+        return {
+          ...entry,
+          thesis: null,
+          wizardComplete: false,
+          wizardSkipped: []
+        };
+      }
+      return entry;
+    });
+    if (migrated) {
+      this.saveJournal();
+      console.log('Migrated journal entries to new schema');
+    }
+  }
+
+  // JournalMeta persistence
+  saveJournalMeta() {
+    try {
+      localStorage.setItem('riskCalcJournalMeta', JSON.stringify(this.state.journalMeta));
+    } catch (e) {
+      console.error('Failed to save journal meta:', e);
+    }
+  }
+
+  loadJournalMeta() {
+    try {
+      const saved = localStorage.getItem('riskCalcJournalMeta');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Deep merge to preserve defaults for missing keys
+        this.state.journalMeta = {
+          achievements: {
+            unlocked: parsed.achievements?.unlocked || [],
+            progress: {
+              ...this.state.journalMeta.achievements.progress,
+              ...(parsed.achievements?.progress || {})
+            }
+          },
+          settings: {
+            ...this.state.journalMeta.settings,
+            ...(parsed.settings || {})
+          },
+          schemaVersion: parsed.schemaVersion || 1
+        };
+      }
+    } catch (e) {
+      console.error('Failed to load journal meta:', e);
+    }
+  }
+
   // Getters
   get settings() { return this.state.settings; }
   get account() { return this.state.account; }
   get trade() { return this.state.trade; }
   get results() { return this.state.results; }
   get journal() { return this.state.journal; }
+  get journalMeta() { return this.state.journalMeta; }
   get ui() { return this.state.ui; }
 }
 
