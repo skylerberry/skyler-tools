@@ -2786,6 +2786,7 @@ const Wizard = {
         this.elements.setupBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this.thesis.setupType = btn.dataset.setup;
+        SoundFX.playClick();
       });
     });
 
@@ -2794,6 +2795,7 @@ const Wizard = {
         this.elements.entryTypeBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         this.thesis.entryType = btn.dataset.entryType;
+        SoundFX.playClick();
       });
     });
 
@@ -2802,6 +2804,7 @@ const Wizard = {
         const level = parseInt(star.dataset.conviction);
         this.thesis.conviction = level;
         this.elements.convictionStars.forEach((s, i) => s.classList.toggle('active', i < level));
+        SoundFX.playClick();
       });
     });
   },
