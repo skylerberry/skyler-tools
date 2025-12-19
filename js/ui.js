@@ -161,6 +161,34 @@ class SettingsToggle {
 }
 
 /**
+ * Hint Arrow Handler - Scroll to input on mobile when clicking the up arrow
+ */
+class HintArrowHandler {
+  init() {
+    const upArrow = document.querySelector('.welcome-card__hint-arrow--up');
+    if (!upArrow) return;
+
+    // Make it tappable
+    upArrow.style.cursor = 'pointer';
+
+    // Handle both click and touch
+    upArrow.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.scrollToInput();
+    });
+  }
+
+  scrollToInput() {
+    // On mobile, input panel is at top - just scroll to top
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+}
+
+/**
  * Focus Manager - Controls visual attention flow between panels
  */
 class FocusManager {
@@ -266,3 +294,4 @@ export const theme = new ThemeManager();
 export const keyboard = new KeyboardManager();
 export const settingsToggle = new SettingsToggle();
 export const focusManager = new FocusManager();
+export const hintArrow = new HintArrowHandler();

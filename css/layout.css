@@ -133,6 +133,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--border-radius-xl);
   padding: var(--space-5);
+  scroll-margin-top: calc(var(--header-height) + var(--space-3));
 }
 
 .panel--input .panel__content {
@@ -333,10 +334,11 @@
   .panel--journal {
     padding: var(--space-3);
     width: 100%;
-    flex-shrink: 0;
+    flex: 0 0 auto;
   }
 
   .panel__content {
+    flex: 0 0 auto;
     overflow: visible;
   }
 

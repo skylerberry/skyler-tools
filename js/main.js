@@ -7,7 +7,7 @@ import { calculator } from './calculator.js';
 import { parser } from './parser.js';
 import { journal } from './journal.js';
 import { settings } from './settings.js';
-import { theme, keyboard, settingsToggle, focusManager } from './ui.js';
+import { theme, keyboard, settingsToggle, focusManager, hintArrow } from './ui.js';
 import { trimModal } from './trimModal.js';
 
 class App {
@@ -44,6 +44,9 @@ class App {
 
     // Initialize focus manager for visual attention flow
     focusManager.init();
+
+    // Initialize hint arrow click handler (mobile scroll to input)
+    hintArrow.init();
 
     // Sync Quick Settings summary with loaded values
     settingsToggle.updateSummary(
