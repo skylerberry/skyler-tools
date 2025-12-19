@@ -3142,23 +3142,58 @@ window.testConfetti = (count) => {
 const SoundFX = {
   ctx: null,
   enabled: false,
-  initialized: false,
+  warmedUp: false,
 
   init() {
-    // Lazy init - create AudioContext on first user interaction
     this.enabled = AppState.journalMeta.settings.soundEnabled || false;
 
     // Listen for settings changes
     document.addEventListener('journalMetaSettingsChanged', () => {
       this.enabled = AppState.journalMeta.settings.soundEnabled || false;
     });
+
+    // Warm up audio context on first user interaction
+    const warmup = () => {
+      if (this.warmedUp) return;
+      this.warmup();
+      document.removeEventListener('click', warmup);
+      document.removeEventListener('touchstart', warmup);
+      document.removeEventListener('keydown', warmup);
+    };
+
+    document.addEventListener('click', warmup, { once: false, passive: true });
+    document.addEventListener('touchstart', warmup, { once: false, passive: true });
+    document.addEventListener('keydown', warmup, { once: false, passive: true });
+  },
+
+  warmup() {
+    if (this.warmedUp) return;
+
+    // Create and resume context
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+
+    // Play a silent sound to fully initialize the audio pipeline
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0, this.ctx.currentTime); // Silent
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.001);
+
+    this.warmedUp = true;
   },
 
   ensureContext() {
     if (!this.ctx) {
       this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
-    // Resume if suspended (browsers require user gesture)
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
