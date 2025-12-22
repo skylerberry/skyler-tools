@@ -575,6 +575,7 @@ const Calculator = {
       profitPerShare: document.getElementById('profitPerShare'),
       potentialProfit: document.getElementById('potentialProfit'),
       profitROI: document.getElementById('profitROI'),
+      accountGrowth: document.getElementById('accountGrowth'),
       // What If Section
       whatIfSection: document.getElementById('whatIfSection'),
       whatIfTargetPrice: document.getElementById('whatIfTargetPrice'),
@@ -890,7 +891,9 @@ const Calculator = {
       shares, positionSize, riskDollars: actualRiskDollars, stopDistance,
       stopPerShare: riskPerShare, rMultiple, target, profit, roi, targetProfitPerShare, isLimited, percentOfAccount,
       originalPositionSize, originalPercentOfAccount,
-      originalRiskDollars, originalRiskPercent, actualRiskPercent
+      originalRiskDollars, originalRiskPercent, actualRiskPercent,
+      accountSize,
+      accountGrowth: profit ? (profit / accountSize) * 100 : null
     };
 
     AppState.updateResults(results);
@@ -973,6 +976,10 @@ const Calculator = {
       if (this.elements.profitROI) {
         this.elements.profitROI.textContent = `${sign}${Utils.formatPercent(Math.abs(r.roi))}`;
         this.elements.profitROI.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.accountGrowth) {
+        this.elements.accountGrowth.textContent = `${sign}${Utils.formatPercent(Math.abs(r.accountGrowth))}`;
+        this.elements.accountGrowth.className = `what-if__stat-value ${colorClass}`;
       }
     } else {
       // Hide What If section

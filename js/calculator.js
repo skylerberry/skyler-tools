@@ -38,6 +38,7 @@ class Calculator {
       rMultiple: document.getElementById('rMultiple'),
       potentialProfit: document.getElementById('potentialProfit'),
       profitROI: document.getElementById('profitROI'),
+      accountGrowth: document.getElementById('accountGrowth'),
 
       // What If Section
       whatIfSection: document.getElementById('whatIfSection'),
@@ -304,7 +305,9 @@ class Calculator {
       originalPercentOfAccount,
       originalRiskDollars,
       originalRiskPercent,
-      actualRiskPercent
+      actualRiskPercent,
+      accountSize,
+      accountGrowth: profit ? (profit / accountSize) * 100 : null
     };
 
     state.updateResults(results);
@@ -370,6 +373,7 @@ class Calculator {
       if (this.elements.rMultiple) this.elements.rMultiple.textContent = `${r.rMultiple.toFixed(2)}R`;
       if (this.elements.potentialProfit) this.elements.potentialProfit.textContent = formatCurrency(r.profit);
       if (this.elements.profitROI) this.elements.profitROI.textContent = `${formatPercent(r.roi)}`;
+      if (this.elements.accountGrowth) this.elements.accountGrowth.textContent = `${formatPercent(r.accountGrowth)}`;
     } else {
       // Hide What If section
       if (this.elements.whatIfSection) this.elements.whatIfSection.classList.remove('visible');
