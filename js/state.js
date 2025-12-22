@@ -10,7 +10,8 @@ class AppState {
         defaultRiskPercent: 1,
         defaultMaxPositionPercent: 100,
         dynamicAccountEnabled: true,
-        theme: 'dark'
+        theme: 'dark',
+        sarMember: true
       },
 
       account: {

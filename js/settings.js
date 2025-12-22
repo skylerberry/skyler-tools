@@ -40,6 +40,10 @@ class Settings {
       celebrationsToggle: document.getElementById('celebrationsToggle'),
       soundToggle: document.getElementById('soundToggle'),
 
+      // Appearance settings
+      sarMemberToggle: document.getElementById('sarMemberToggle'),
+      discordDropZone: document.getElementById('discordDropZone'),
+
       // Data management buttons
       exportDataBtn: document.getElementById('exportDataBtn'),
       importDataBtn: document.getElementById('importDataBtn'),
@@ -152,6 +156,14 @@ class Settings {
       });
     }
 
+    // SAR Member toggle
+    if (this.elements.sarMemberToggle) {
+      this.elements.sarMemberToggle.addEventListener('change', (e) => {
+        state.updateSettings({ sarMember: e.target.checked });
+        this.updateDiscordDropZoneVisibility(e.target.checked);
+      });
+    }
+
     // Reset account
     if (this.elements.resetAccountBtn) {
       this.elements.resetAccountBtn.addEventListener('click', () => this.resetAccount());
@@ -239,6 +251,13 @@ class Settings {
       this.elements.soundToggle.checked = state.journalMeta.settings.soundEnabled || false;
     }
 
+    // Apply SAR Member toggle
+    if (this.elements.sarMemberToggle) {
+      const sarMember = state.settings.sarMember !== false; // Default true
+      this.elements.sarMemberToggle.checked = sarMember;
+      this.updateDiscordDropZoneVisibility(sarMember);
+    }
+
     // Apply to main calculator
     if (this.elements.accountSize) {
       this.elements.accountSize.value = formatWithCommas(state.account.currentSize);
@@ -266,6 +285,12 @@ class Settings {
     this.elements.settingsOverlay?.classList.remove('open');
     document.body.style.overflow = '';
     state.setUI('settingsOpen', false);
+  }
+
+  updateDiscordDropZoneVisibility(visible) {
+    if (this.elements.discordDropZone) {
+      this.elements.discordDropZone.style.display = visible ? '' : 'none';
+    }
   }
 
   updateSummary() {
