@@ -4,6 +4,7 @@
 
 import { state } from './state.js';
 import { parseNumber, formatCurrency, formatPercent, formatNumber, formatWithCommas } from './utils.js';
+import { showToast } from './ui.js';
 
 class Calculator {
   constructor() {
@@ -13,14 +14,28 @@ class Calculator {
   init() {
     this.cacheElements();
     this.bindEvents();
+    this.syncRiskButton();
     this.calculate();
+  }
+
+  syncRiskButton() {
+    // Sync risk button active state with current risk percent
+    const currentRisk = state.account.riskPercent || state.settings.defaultRiskPercent;
+    document.querySelectorAll('.risk-btn').forEach(btn => {
+      const btnRisk = parseFloat(btn.dataset.risk);
+      if (btnRisk === currentRisk) {
+        btn.classList.add('risk-btn--active');
+      } else {
+        btn.classList.remove('risk-btn--active');
+      }
+    });
   }
 
   cacheElements() {
     this.elements = {
       // Inputs
       accountSize: document.getElementById('accountSize'),
-      riskPercent: document.getElementById('riskPercent'),
+      customRisk: document.getElementById('customRisk'),
       maxPositionPercent: document.getElementById('maxPositionPercent'),
       ticker: document.getElementById('ticker'),
       entryPrice: document.getElementById('entryPrice'),
@@ -36,6 +51,7 @@ class Calculator {
       stopDistance: document.getElementById('stopDistance'),
       stopPerShare: document.getElementById('stopPerShare'),
       rMultiple: document.getElementById('rMultiple'),
+      profitPerShare: document.getElementById('profitPerShare'),
       potentialProfit: document.getElementById('potentialProfit'),
       profitROI: document.getElementById('profitROI'),
       accountGrowth: document.getElementById('accountGrowth'),
@@ -56,7 +72,6 @@ class Calculator {
 
       // R-Progress Bar
       rProgressBar: document.getElementById('rProgressBar'),
-      rProgressFill: document.getElementById('rProgressFill'),
       rStopPrice: document.getElementById('rStopPrice'),
       rStopProfit: document.getElementById('rStopProfit'),
       rEntryPrice: document.getElementById('rEntryPrice'),
@@ -74,12 +89,26 @@ class Calculator {
   }
 
   bindEvents() {
-    const { accountSize, riskPercent, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice } = this.elements;
+    const { accountSize, customRisk, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice } = this.elements;
 
     // Input events
-    [riskPercent, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice].forEach(el => {
+    [customRisk, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice].forEach(el => {
       if (el) el.addEventListener('input', () => this.calculate());
     });
+
+    // Risk button handlers
+    document.querySelectorAll('.risk-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => this.handleRiskButton(e));
+    });
+
+    // Custom risk input handler
+    if (customRisk) {
+      customRisk.addEventListener('input', () => {
+        // Clear active state on risk buttons when typing custom value
+        document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('risk-btn--active'));
+        this.calculate();
+      });
+    }
 
     // Account size with K/M instant conversion and formatting
     if (accountSize) {
@@ -152,6 +181,27 @@ class Calculator {
     this.calculate();
   }
 
+  handleRiskButton(e) {
+    const btn = e.target.closest('.risk-btn');
+    if (!btn) return;
+
+    const risk = parseFloat(btn.dataset.risk);
+    if (isNaN(risk)) return;
+
+    // Update active state
+    document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('risk-btn--active'));
+    btn.classList.add('risk-btn--active');
+
+    // Clear custom input
+    if (this.elements.customRisk) {
+      this.elements.customRisk.value = '';
+    }
+
+    // Update state and recalculate
+    state.updateAccount({ riskPercent: risk });
+    this.calculate();
+  }
+
   clear() {
     // Clear trade input fields
     if (this.elements.ticker) this.elements.ticker.value = '';
@@ -203,7 +253,18 @@ class Calculator {
 
   calculate() {
     const accountSize = parseNumber(this.elements.accountSize?.value);
-    const riskPercent = parseNumber(this.elements.riskPercent?.value);
+    
+    // Get risk percent from active button, custom input, or state
+    let riskPercent = null;
+    const activeRiskBtn = document.querySelector('.risk-btn.risk-btn--active');
+    if (activeRiskBtn) {
+      riskPercent = parseFloat(activeRiskBtn.dataset.risk);
+    } else if (this.elements.customRisk?.value) {
+      riskPercent = parseNumber(this.elements.customRisk.value);
+    } else {
+      riskPercent = state.account.riskPercent || state.settings.defaultRiskPercent;
+    }
+    
     const entry = parseNumber(this.elements.entryPrice?.value);
     const stop = parseNumber(this.elements.stopLoss?.value);
     const target = parseNumber(this.elements.targetPrice?.value);
@@ -277,12 +338,13 @@ class Calculator {
     let rMultiple = null;
     let profit = null;
     let roi = null;
+    let targetProfitPerShare = null;
 
-    if (target && target > entry) {
-      const profitPerShare = target - entry;
-      rMultiple = profitPerShare / riskPerShare;
-      profit = shares * profitPerShare;
-      roi = (profitPerShare / entry) * 100;
+    if (target && target !== entry) {
+      targetProfitPerShare = target - entry;
+      rMultiple = targetProfitPerShare / riskPerShare;
+      profit = shares * targetProfitPerShare;
+      roi = (targetProfitPerShare / entry) * 100;
     }
 
     // 5R Target
@@ -299,6 +361,7 @@ class Calculator {
       target,
       profit,
       roi,
+      targetProfitPerShare,
       isLimited,
       percentOfAccount,
       originalPositionSize,
@@ -307,7 +370,7 @@ class Calculator {
       originalRiskPercent,
       actualRiskPercent,
       accountSize,
-      accountGrowth: profit ? (profit / accountSize) * 100 : null
+      accountGrowth: profit !== null ? (profit / accountSize) * 100 : null
     };
 
     state.updateResults(results);
@@ -365,15 +428,38 @@ class Calculator {
     if (this.elements.stopPerShare) this.elements.stopPerShare.textContent = `${formatCurrency(r.stopPerShare)}/share`;
     if (this.elements.resultsTicker) this.elements.resultsTicker.textContent = `Ticker: ${ticker}`;
 
-    // What If Section - Progressive Disclosure
+    // What If Section - Progressive Disclosure (profit or loss scenarios)
     if (r.rMultiple !== null && r.target) {
+      const isProfit = r.profit >= 0;
+      const colorClass = isProfit ? 'text-success' : 'text-danger';
+      const sign = isProfit ? '+' : '-';
+
       // Show What If section
       if (this.elements.whatIfSection) this.elements.whatIfSection.classList.add('visible');
-      if (this.elements.whatIfTargetPrice) this.elements.whatIfTargetPrice.textContent = formatCurrency(r.target);
-      if (this.elements.rMultiple) this.elements.rMultiple.textContent = `${r.rMultiple.toFixed(2)}R`;
-      if (this.elements.potentialProfit) this.elements.potentialProfit.textContent = formatCurrency(r.profit);
-      if (this.elements.profitROI) this.elements.profitROI.textContent = `${formatPercent(r.roi)}`;
-      if (this.elements.accountGrowth) this.elements.accountGrowth.textContent = `${formatPercent(r.accountGrowth)}`;
+      if (this.elements.whatIfTargetPrice) {
+        this.elements.whatIfTargetPrice.textContent = formatCurrency(r.target);
+        this.elements.whatIfTargetPrice.className = `what-if__target-price ${colorClass}`;
+      }
+      if (this.elements.rMultiple) {
+        this.elements.rMultiple.textContent = `${sign}${Math.abs(r.rMultiple).toFixed(2)}R`;
+        this.elements.rMultiple.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.profitPerShare) {
+        this.elements.profitPerShare.textContent = `${sign}${formatCurrency(Math.abs(r.targetProfitPerShare))}/sh`;
+        this.elements.profitPerShare.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.potentialProfit) {
+        this.elements.potentialProfit.textContent = `${sign}${formatCurrency(Math.abs(r.profit))}`;
+        this.elements.potentialProfit.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.profitROI) {
+        this.elements.profitROI.textContent = `${sign}${formatPercent(Math.abs(r.roi))}`;
+        this.elements.profitROI.className = `what-if__stat-value ${colorClass}`;
+      }
+      if (this.elements.accountGrowth) {
+        this.elements.accountGrowth.textContent = `${sign}${formatPercent(Math.abs(r.accountGrowth))}`;
+        this.elements.accountGrowth.className = `what-if__stat-value ${colorClass}`;
+      }
     } else {
       // Hide What If section
       if (this.elements.whatIfSection) this.elements.whatIfSection.classList.remove('visible');

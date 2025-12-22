@@ -6,6 +6,7 @@ import { state } from './state.js';
 import { formatCurrency, formatPercent, formatDate } from './utils.js';
 import { showToast } from './ui.js';
 import { trimModal } from './trimModal.js';
+import { dataManager } from './dataManager.js';
 
 class Journal {
   constructor() {
@@ -40,7 +41,17 @@ class Journal {
       closeJournalBtn: document.getElementById('closeJournalBtn'),
       viewJournalBtn: document.getElementById('viewJournalBtn'),
       journalTableBody: document.getElementById('journalTableBody'),
-      journalSummaryText: document.getElementById('journalSummaryText')
+      journalSummaryText: document.getElementById('journalSummaryText'),
+
+      // Export buttons (journal panel)
+      exportCSVBtn: document.getElementById('exportCSVBtn'),
+      exportTSVBtn: document.getElementById('exportTSVBtn'),
+      exportPDFBtn: document.getElementById('exportPDFBtn'),
+
+      // Export buttons (journal modal)
+      journalCopyCSV: document.getElementById('journalCopyCSV'),
+      journalCopyTSV: document.getElementById('journalCopyTSV'),
+      journalDownload: document.getElementById('journalDownload')
     };
   }
 
@@ -69,6 +80,30 @@ class Journal {
         this.renderTable(e.target.dataset.filter);
       });
     });
+
+    // Export buttons (journal panel)
+    if (this.elements.exportCSVBtn) {
+      this.elements.exportCSVBtn.addEventListener('click', () => dataManager.exportCSV());
+    }
+    if (this.elements.exportTSVBtn) {
+      this.elements.exportTSVBtn.addEventListener('click', () => dataManager.exportTSV());
+    }
+    if (this.elements.exportPDFBtn) {
+      this.elements.exportPDFBtn.addEventListener('click', () => {
+        showToast('PDF export coming soon. Use CSV for now.', 'warning');
+      });
+    }
+
+    // Export buttons (journal modal)
+    if (this.elements.journalCopyCSV) {
+      this.elements.journalCopyCSV.addEventListener('click', () => dataManager.copyCSV());
+    }
+    if (this.elements.journalCopyTSV) {
+      this.elements.journalCopyTSV.addEventListener('click', () => dataManager.copyTSV());
+    }
+    if (this.elements.journalDownload) {
+      this.elements.journalDownload.addEventListener('click', () => dataManager.exportCSV());
+    }
 
     // Make close/delete functions globally available
     window.closeTrade = (id) => this.closeTrade(id);

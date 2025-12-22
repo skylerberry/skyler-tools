@@ -146,7 +146,7 @@ class SettingsToggle {
     this.card.classList.toggle('open');
   }
 
-  updateSummary(accountSize, riskPercent, maxPosition) {
+  updateSummary(accountSize, maxPosition) {
     if (!this.summary) return;
 
     // Format account size (50000 -> $50k, 1500000 -> $1.5m)
@@ -156,7 +156,7 @@ class SettingsToggle {
       return `$${val}`;
     };
 
-    this.summary.textContent = `${formatAccount(accountSize)} · ${riskPercent}% · ${maxPosition}%`;
+    this.summary.textContent = `${formatAccount(accountSize)} acc. · Max ${maxPosition}%`;
   }
 }
 

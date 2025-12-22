@@ -18,34 +18,75 @@ class AlertParser {
   cacheElements() {
     this.elements = {
       alertCard: document.getElementById('alertCard'),
-      alertToggle: document.getElementById('alertToggle'),
-      alertInput: document.getElementById('alertInput'),
-      parseBtn: document.getElementById('parseAlertBtn')
+      pasteBtn: document.getElementById('pasteAlertBtn'),
+      shortcutHint: document.getElementById('shortcutHint')
     };
   }
 
   bindEvents() {
-    // Toggle collapsible
-    if (this.elements.alertToggle && this.elements.alertCard) {
-      this.elements.alertToggle.addEventListener('click', () => {
-        this.elements.alertCard.classList.toggle('open');
-      });
+    // Paste button click handler
+    if (this.elements.pasteBtn) {
+      this.elements.pasteBtn.addEventListener('click', () => this.pasteAndParse());
     }
 
-    // Parse button
-    if (this.elements.parseBtn) {
-      this.elements.parseBtn.addEventListener('click', () => this.parseAndFill());
-    }
+    // Global paste handler (Cmd/Ctrl+V anywhere)
+    document.addEventListener('paste', (e) => {
+      // Only handle if focus is not in an input/textarea
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+      this.handlePaste(e);
+    });
 
-    // Enter key to parse
-    if (this.elements.alertInput) {
-      this.elements.alertInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          this.parseAndFill();
-        }
-      });
+    // Set shortcut hint text (Mac vs Windows)
+    this.setShortcutHint();
+  }
+
+  setShortcutHint() {
+    if (!this.elements.shortcutHint) return;
+    
+    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+    const textSpan = this.elements.shortcutHint.querySelector('.shortcut-text');
+    
+    if (textSpan) {
+      textSpan.textContent = isMac ? '⌘V' : 'Ctrl+V';
     }
+  }
+
+  async handlePaste(e) {
+    e.preventDefault();
+    const text = e.clipboardData?.getData('text');
+    if (text) {
+      await this.parseAndFill(text);
+    }
+  }
+
+  async pasteAndParse() {
+    try {
+      const text = await navigator.clipboard.readText();
+
+      if (!text || !text.trim()) {
+        this.flashButton('error');
+        showToast('Clipboard is empty', 'warning');
+        return;
+      }
+
+      await this.parseAndFill(text);
+    } catch (err) {
+      console.error('Failed to read clipboard:', err);
+      showToast('Could not read clipboard. Try pasting manually.', 'error');
+    }
+  }
+
+  flashButton(type) {
+    if (!this.elements.pasteBtn) return;
+    
+    const className = type === 'success' ? 'flash-success' : 'error';
+    this.elements.pasteBtn.classList.add(className);
+    setTimeout(() => {
+      this.elements.pasteBtn.classList.remove(className);
+    }, type === 'success' ? 1000 : 500);
   }
 
   parse(text) {
@@ -91,13 +132,11 @@ class AlertParser {
     return result;
   }
 
-  parseAndFill() {
-    const text = this.elements.alertInput?.value;
+  async parseAndFill(text) {
     const parsed = this.parse(text);
 
     if (!parsed || (!parsed.ticker && !parsed.entry && !parsed.stop)) {
-      this.elements.alertInput?.classList.add('error');
-      setTimeout(() => this.elements.alertInput?.classList.remove('error'), 500);
+      this.flashButton('error');
       showToast('Could not parse alert', 'warning');
       return;
     }
@@ -112,13 +151,7 @@ class AlertParser {
     if (parsed.stop) parts.push(`SL $${parseFloat(parsed.stop).toFixed(2)}`);
     if (parsed.riskPercent) parts.push(`${parsed.riskPercent}%`);
 
-    // Clear input
-    if (this.elements.alertInput) {
-      this.elements.alertInput.value = '';
-      this.elements.alertInput.classList.add('flash-success');
-      setTimeout(() => this.elements.alertInput.classList.remove('flash-success'), 1000);
-    }
-
+    this.flashButton('success');
     showToast(`Parsed: ${parts.join(' | ')}`, 'success');
 
     // On mobile, scroll to Position Details section

@@ -9,6 +9,12 @@ import { journal } from './journal.js';
 import { settings } from './settings.js';
 import { theme, keyboard, settingsToggle, focusManager, hintArrow } from './ui.js';
 import { trimModal } from './trimModal.js';
+import { wizard } from './wizard.js';
+import { confetti } from './confetti.js';
+import { achievements } from './achievements.js';
+import { soundFx } from './soundFx.js';
+import { dataManager } from './dataManager.js';
+import { clearDataModal } from './clearDataModal.js';
 
 class App {
   constructor() {
@@ -17,6 +23,9 @@ class App {
 
   init() {
     console.log('Initializing Trade Manager...');
+
+    // Set up module references for dataManager to avoid circular dependencies
+    dataManager.setModules(settings, calculator, journal, clearDataModal);
 
     // Initialize theme first (handles saved preference)
     theme.init();
@@ -36,6 +45,21 @@ class App {
     // Initialize trim modal
     trimModal.init();
 
+    // Initialize wizard
+    wizard.init();
+
+    // Initialize confetti
+    confetti.init();
+
+    // Initialize achievements
+    achievements.init();
+
+    // Initialize sound effects
+    soundFx.init();
+
+    // Initialize clear data modal
+    clearDataModal.init();
+
     // Initialize keyboard shortcuts
     keyboard.init();
 
@@ -51,14 +75,16 @@ class App {
     // Sync Quick Settings summary with loaded values
     settingsToggle.updateSummary(
       state.account.currentSize,
-      state.settings.riskPercent,
-      state.settings.maxPositionPercent
+      state.account.maxPositionPercent
     );
 
     // Set up global event listeners
     this.setupGlobalEvents();
 
-    console.log('Trade Manager initialized');
+    // Expose global functions for HTML onclick handlers
+    this.setupGlobalFunctions();
+
+    console.log('Trade Manager initialized successfully');
   }
 
   setupGlobalEvents() {
@@ -67,8 +93,7 @@ class App {
       calculator.calculate();
       settingsToggle.updateSummary(
         state.account.currentSize,
-        state.settings.riskPercent,
-        state.settings.maxPositionPercent
+        state.account.maxPositionPercent
       );
     });
 
@@ -92,11 +117,10 @@ class App {
     });
 
     // Update settings summary when settings change
-    state.on('settingsChanged', (s) => {
+    state.on('settingsChanged', () => {
       settingsToggle.updateSummary(
         state.account.currentSize,
-        s.riskPercent,
-        s.maxPositionPercent
+        state.account.maxPositionPercent
       );
     });
 
@@ -105,6 +129,19 @@ class App {
       state.on('settingsChanged', (s) => console.log('Settings:', s));
       state.on('tradeChanged', (t) => console.log('Trade:', t));
     }
+  }
+
+  setupGlobalFunctions() {
+    // Expose functions needed by HTML onclick handlers
+    window.closeTrade = (tradeId) => trimModal.open(tradeId);
+    window.deleteTrade = (tradeId) => journal.deleteTrade(tradeId);
+    window.exportAllData = () => dataManager.exportAllData();
+    window.importData = () => dataManager.importData();
+    window.clearAllData = () => dataManager.clearAllData();
+    window.exportCSV = () => dataManager.exportCSV();
+    window.exportTSV = () => dataManager.exportTSV();
+    window.copyCSV = () => dataManager.copyCSV();
+    window.copyTSV = () => dataManager.copyTSV();
   }
 }
 

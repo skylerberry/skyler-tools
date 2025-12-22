@@ -5,6 +5,8 @@
 import { state } from './state.js';
 import { parseNumber, formatCurrency, formatWithCommas } from './utils.js';
 import { showToast } from './ui.js';
+import { dataManager } from './dataManager.js';
+import { clearDataModal } from './clearDataModal.js';
 
 class Settings {
   constructor() {
@@ -36,6 +38,12 @@ class Settings {
       // Journal settings
       wizardEnabledToggle: document.getElementById('wizardEnabledToggle'),
       celebrationsToggle: document.getElementById('celebrationsToggle'),
+      soundToggle: document.getElementById('soundToggle'),
+
+      // Data management buttons
+      exportDataBtn: document.getElementById('exportDataBtn'),
+      importDataBtn: document.getElementById('importDataBtn'),
+      clearDataBtn: document.getElementById('clearDataBtn'),
 
       // Summary
       summaryStarting: document.getElementById('summaryStarting'),
@@ -44,7 +52,6 @@ class Settings {
 
       // Main calculator inputs
       accountSize: document.getElementById('accountSize'),
-      riskPercent: document.getElementById('riskPercent'),
       maxPositionPercent: document.getElementById('maxPositionPercent'),
 
       // Header
@@ -138,9 +145,27 @@ class Settings {
       });
     }
 
+    // Sound toggle
+    if (this.elements.soundToggle) {
+      this.elements.soundToggle.addEventListener('change', (e) => {
+        state.updateJournalMetaSettings({ soundEnabled: e.target.checked });
+      });
+    }
+
     // Reset account
     if (this.elements.resetAccountBtn) {
       this.elements.resetAccountBtn.addEventListener('click', () => this.resetAccount());
+    }
+
+    // Data management buttons
+    if (this.elements.exportDataBtn) {
+      this.elements.exportDataBtn.addEventListener('click', () => dataManager.exportAllData());
+    }
+    if (this.elements.importDataBtn) {
+      this.elements.importDataBtn.addEventListener('click', () => dataManager.importData());
+    }
+    if (this.elements.clearDataBtn) {
+      this.elements.clearDataBtn.addEventListener('click', () => clearDataModal.open());
     }
 
     // Settings preset buttons
@@ -192,21 +217,34 @@ class Settings {
       this.elements.dynamicAccountToggle.checked = state.settings.dynamicAccountEnabled;
     }
 
-    // Apply journal settings
+    // Apply journal meta settings to toggles
     if (this.elements.wizardEnabledToggle) {
-      this.elements.wizardEnabledToggle.checked = state.journalMeta.settings.wizardEnabled;
+      this.elements.wizardEnabledToggle.checked = state.journalMeta.settings.wizardEnabled || false;
     }
     if (this.elements.celebrationsToggle) {
-      this.elements.celebrationsToggle.checked = state.journalMeta.settings.celebrationsEnabled;
+      this.elements.celebrationsToggle.checked = state.journalMeta.settings.celebrationsEnabled !== false; // Default true
+    }
+    if (this.elements.soundToggle) {
+      this.elements.soundToggle.checked = state.journalMeta.settings.soundEnabled || false;
+    }
+
+    // Apply journal settings
+    if (this.elements.wizardEnabledToggle) {
+      this.elements.wizardEnabledToggle.checked = state.journalMeta.settings.wizardEnabled || false;
+    }
+    if (this.elements.celebrationsToggle) {
+      this.elements.celebrationsToggle.checked = state.journalMeta.settings.celebrationsEnabled !== false; // Default true
+    }
+    if (this.elements.soundToggle) {
+      this.elements.soundToggle.checked = state.journalMeta.settings.soundEnabled || false;
     }
 
     // Apply to main calculator
     if (this.elements.accountSize) {
       this.elements.accountSize.value = formatWithCommas(state.account.currentSize);
     }
-    if (this.elements.riskPercent) {
-      this.elements.riskPercent.value = state.settings.defaultRiskPercent;
-    }
+    // Risk percent is handled by buttons, not an input field
+    // Sync risk button active state (handled by calculator.syncRiskButton())
     if (this.elements.maxPositionPercent) {
       this.elements.maxPositionPercent.value = state.settings.defaultMaxPositionPercent;
     }
