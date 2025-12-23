@@ -7,6 +7,9 @@ import { formatCurrency, formatPercent, formatDate } from './utils.js';
 import { showToast } from './ui.js';
 import { trimModal } from './trimModal.js';
 import { dataManager } from './dataManager.js';
+import { wizard } from './wizard.js';
+import { confetti } from './confetti.js';
+import { viewManager } from './viewManager.js';
 
 class Journal {
   constructor() {
@@ -22,6 +25,22 @@ class Journal {
     state.on('journalEntryAdded', () => this.render());
     state.on('journalEntryUpdated', () => this.render());
     state.on('journalEntryDeleted', () => this.render());
+
+    // Listen for calculation results to enable/disable log button
+    state.on('resultsRendered', (results) => {
+      this.updateLogButtonState(results);
+    });
+
+    // Initial button state check
+    this.updateLogButtonState(state.results);
+
+    // Listen for wizard setting changes to show/hide hint
+    state.on('journalMetaSettingsChanged', () => {
+      this.updateWizardHint();
+    });
+
+    // Initial wizard hint state
+    this.updateWizardHint();
   }
 
   cacheElements() {
@@ -29,11 +48,13 @@ class Journal {
       // Log trade
       tradeNotes: document.getElementById('tradeNotes'),
       logTradeBtn: document.getElementById('logTradeBtn'),
+      wizardHint: document.getElementById('wizardHint'),
 
       // Active trades
       activeTrades: document.getElementById('activeTrades'),
       activeTradeCount: document.getElementById('activeTradeCount'),
       riskSummary: document.getElementById('riskSummary'),
+      viewPositionsBtn: document.getElementById('viewPositionsBtn'),
 
       // Modal
       journalModal: document.getElementById('journalModal'),
@@ -58,18 +79,25 @@ class Journal {
   bindEvents() {
     // Log trade button
     if (this.elements.logTradeBtn) {
-      this.elements.logTradeBtn.addEventListener('click', () => this.logTrade());
+      this.elements.logTradeBtn.addEventListener('click', (e) => {
+        // Shift+Click bypasses wizard even if enabled
+        const skipWizard = e.shiftKey;
+        this.logTrade(skipWizard);
+      });
     }
 
-    // Open/close modal
+    // Navigate to Journal view (replaces modal)
     if (this.elements.viewJournalBtn) {
-      this.elements.viewJournalBtn.addEventListener('click', () => this.openModal());
+      this.elements.viewJournalBtn.addEventListener('click', () => {
+        viewManager.navigateTo('journal');
+      });
     }
-    if (this.elements.closeJournalBtn) {
-      this.elements.closeJournalBtn.addEventListener('click', () => this.closeModal());
-    }
-    if (this.elements.journalModalOverlay) {
-      this.elements.journalModalOverlay.addEventListener('click', () => this.closeModal());
+
+    // Navigate to Positions view
+    if (this.elements.viewPositionsBtn) {
+      this.elements.viewPositionsBtn.addEventListener('click', () => {
+        viewManager.navigateTo('positions');
+      });
     }
 
     // Filter buttons
@@ -110,7 +138,7 @@ class Journal {
     window.deleteTrade = (id) => this.deleteTrade(id);
   }
 
-  logTrade() {
+  logTrade(skipWizard = false) {
     const results = state.results;
     const trade = state.trade;
 
@@ -119,6 +147,16 @@ class Journal {
       return;
     }
 
+    // Check if wizard is enabled and should be used
+    const wizardEnabled = state.journalMeta.settings.wizardEnabled || false;
+    
+    if (wizardEnabled && !skipWizard) {
+      // Open wizard instead of directly logging
+      wizard.open();
+      return;
+    }
+
+    // Direct logging (wizard disabled or shift+click bypass)
     const entry = {
       ticker: trade.ticker || 'UNKNOWN',
       entry: trade.entry,
@@ -133,10 +171,39 @@ class Journal {
       status: 'open',
       exitPrice: null,
       exitDate: null,
-      pnl: null
+      pnl: null,
+      thesis: null,
+      wizardComplete: false,
+      wizardSkipped: []
     };
 
-    state.addJournalEntry(entry);
+    const newEntry = state.addJournalEntry(entry);
+
+    // Update progress
+    const progress = state.journalMeta.achievements.progress;
+    progress.totalTrades++;
+
+    if (entry.notes) {
+      progress.tradesWithNotes++;
+    }
+
+    // Update streak
+    state.updateStreak();
+
+    // Save progress
+    state.saveJournalMeta();
+
+    // Emit tradeLogged event for achievements
+    state.emit('tradeLogged', {
+      entry: newEntry,
+      wizardComplete: false,
+      thesis: null
+    });
+
+    // Trigger confetti if celebrations enabled
+    if (state.journalMeta.settings.celebrationsEnabled) {
+      state.emit('triggerConfetti');
+    }
 
     // Clear notes
     if (this.elements.tradeNotes) {
@@ -144,6 +211,28 @@ class Journal {
     }
 
     showToast(`${entry.ticker} trade logged!`, 'success');
+
+    // Disable button after logging (will re-enable when new calculation happens)
+    this.updateLogButtonState({ shares: 0 });
+  }
+
+  updateLogButtonState(results) {
+    if (!this.elements.logTradeBtn) return;
+
+    const hasValidResults = results && results.shares > 0;
+
+    if (hasValidResults) {
+      this.elements.logTradeBtn.removeAttribute('disabled');
+    } else {
+      this.elements.logTradeBtn.setAttribute('disabled', 'disabled');
+    }
+  }
+
+  updateWizardHint() {
+    if (!this.elements.wizardHint) return;
+
+    const wizardEnabled = state.journalMeta.settings.wizardEnabled || false;
+    this.elements.wizardHint.style.display = wizardEnabled ? '' : 'none';
   }
 
   closeTrade(id) {
@@ -342,8 +431,27 @@ class Journal {
 
     if (this.elements.journalSummaryText) {
       const activeCount = open + trimmed;
-      this.elements.journalSummaryText.textContent =
-        `${trades.length} trades | ${wins}W-${losses}L-${activeCount}A | ${totalPnL >= 0 ? '+' : ''}${formatCurrency(totalPnL)}`;
+      const parts = [];
+
+      // Trade count
+      parts.push(`${trades.length} trade${trades.length !== 1 ? 's' : ''}`);
+
+      // Build stats string - only show non-zero values
+      const statParts = [];
+      if (wins > 0) statParts.push(`${wins} win${wins !== 1 ? 's' : ''}`);
+      if (losses > 0) statParts.push(`${losses} loss${losses !== 1 ? 'es' : ''}`);
+      if (activeCount > 0) statParts.push(`${activeCount} open`);
+
+      if (statParts.length > 0) {
+        parts.push(statParts.join(', '));
+      }
+
+      // P&L (only if there are closed trades)
+      if (wins > 0 || losses > 0) {
+        parts.push(`${totalPnL >= 0 ? '+' : ''}${formatCurrency(totalPnL)}`);
+      }
+
+      this.elements.journalSummaryText.textContent = parts.join(' · ');
     }
   }
 }

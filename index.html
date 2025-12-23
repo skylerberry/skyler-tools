@@ -3,20 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trade Manager | skyler.tools</title>
+  <title>TradeDeck | skyler.tools</title>
   <meta name="description" content="Free trading tools for position sizing, risk management, and trade journaling. Calculate shares, risk amount, and profit targets.">
-  <meta name="keywords" content="trade manager, position size calculator, trading calculator, stock trading, risk management, trade journal">
+  <meta name="keywords" content="tradedeck, position size calculator, trading calculator, stock trading, risk management, trade journal">
   <meta name="author" content="skyler.tools">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Trade Manager | skyler.tools">
+  <meta property="og:title" content="TradeDeck | skyler.tools">
   <meta property="og:description" content="Free trading tools for position sizing, risk management, and trade journaling.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://tm.skyler.tools">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Trade Manager | skyler.tools">
+  <meta name="twitter:title" content="TradeDeck | skyler.tools">
   <meta name="twitter:description" content="Free trading tools for position sizing and risk management.">
 
   <!-- Page Pre-load (theme + scroll reset) -->
@@ -45,6 +45,10 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/nav.css">
+  <link rel="stylesheet" href="css/positions.css">
+  <link rel="stylesheet" href="css/journal.css">
+  <link rel="stylesheet" href="css/stats.css">
 </head>
 <body>
   <div class="app">
@@ -55,7 +59,40 @@
           <span class="header__logo">skyler<span class="header__logo-dot">.</span>tools</span>
         </a>
         <span class="header__divider"></span>
-        <span class="header__tool-name">Trade Manager</span>
+        <span class="header__tool-name">TradeDeck</span>
+        <nav class="view-nav" id="viewNav">
+          <button class="view-nav__btn view-nav__btn--active" data-view="dashboard">
+            <svg class="view-nav__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2"></rect>
+              <line x1="8" y1="6" x2="16" y2="6"></line>
+              <line x1="8" y1="10" x2="16" y2="10"></line>
+              <line x1="8" y1="14" x2="12" y2="14"></line>
+            </svg>
+            <span class="view-nav__text">Dashboard</span>
+          </button>
+          <button class="view-nav__btn" data-view="positions">
+            <svg class="view-nav__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span class="view-nav__text">Positions</span>
+          </button>
+          <button class="view-nav__btn" data-view="journal">
+            <svg class="view-nav__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+            <span class="view-nav__text">Journal</span>
+          </button>
+          <button class="view-nav__btn" data-view="stats">
+            <svg class="view-nav__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            <span class="view-nav__text">Stats</span>
+          </button>
+        </nav>
       </div>
       <div class="header__account">
         <span class="header__account-label">Account</span>
@@ -564,6 +601,10 @@
                   <span class="empty-state__hint">Log a trade to see it here</span>
                 </div>
               </div>
+
+              <button class="btn btn--ghost btn--full btn--sm" id="viewPositionsBtn" style="margin-top: var(--space-3);">
+                View All Positions →
+              </button>
             </div>
           </div>
 
@@ -582,6 +623,253 @@
         </div>
       </section>
     </main>
+
+    <!-- Positions View -->
+    <section class="positions-view view--hidden" id="positionsView">
+      <div class="positions-header">
+        <div class="positions-header__left">
+          <span class="positions-header__icon">💼</span>
+          <div>
+            <h1 class="positions-header__title">Positions</h1>
+            <span class="positions-header__subtitle" id="positionsCount">0 active positions</span>
+          </div>
+        </div>
+        <div class="positions-header__filters">
+          <button class="filter-btn filter-btn--active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="open">Open</button>
+          <button class="filter-btn" data-filter="trimmed">Trimmed</button>
+        </div>
+      </div>
+
+      <!-- Risk Overview Bar -->
+      <div class="positions-risk-bar" id="positionsRiskBar">
+        <div class="positions-risk-bar__item">
+          <span class="positions-risk-bar__label">Open Risk</span>
+          <span class="positions-risk-bar__value" id="positionsOpenRisk">$0.00</span>
+        </div>
+        <div class="positions-risk-bar__divider"></div>
+        <div class="positions-risk-bar__item">
+          <span class="positions-risk-bar__label">Risk Level</span>
+          <span class="positions-risk-bar__value positions-risk-bar__value--indicator" id="positionsRiskLevel">LOW</span>
+        </div>
+      </div>
+
+      <!-- Positions Grid -->
+      <div class="positions-grid" id="positionsGrid">
+        <!-- Position cards will be rendered here -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="positions-empty" id="positionsEmpty">
+        <span class="positions-empty__icon">🧘</span>
+        <h2 class="positions-empty__title">No Active Positions</h2>
+        <p class="positions-empty__text">You're currently all cash. Head to the Dashboard to log a new trade.</p>
+        <button class="btn btn--primary" id="positionsGoToDashboard">Go to Dashboard</button>
+      </div>
+    </section>
+
+    <!-- Journal View -->
+    <section class="journal-view view--hidden" id="journalView">
+      <div class="journal-header">
+        <div class="journal-header__left">
+          <span class="journal-header__icon">📖</span>
+          <div>
+            <h1 class="journal-header__title">Trade Journal</h1>
+            <span class="journal-header__subtitle" id="journalCount">0 trades</span>
+          </div>
+        </div>
+        <div class="journal-header__filters">
+          <button class="filter-btn filter-btn--active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="open">Open</button>
+          <button class="filter-btn" data-filter="trimmed">Trimmed</button>
+          <button class="filter-btn" data-filter="closed">Closed</button>
+          <button class="filter-btn" data-filter="winners">Winners</button>
+          <button class="filter-btn" data-filter="losers">Losers</button>
+        </div>
+      </div>
+
+      <!-- Summary Bar -->
+      <div class="journal-summary-bar" id="journalSummaryBar">
+        <div class="journal-summary-bar__item journal-summary-bar__item--hero">
+          <span class="journal-summary-bar__label"><span class="journal-summary-bar__emoji">💰</span> Total P&L</span>
+          <span class="journal-summary-bar__value journal-summary-bar__value--lg" id="journalTotalPnL">$0.00</span>
+        </div>
+        <div class="journal-summary-bar__divider"></div>
+        <div class="journal-summary-bar__item">
+          <span class="journal-summary-bar__label"><span class="journal-summary-bar__emoji">📈</span> Win Rate</span>
+          <span class="journal-summary-bar__value" id="journalWinRate">—</span>
+        </div>
+        <div class="journal-summary-bar__divider"></div>
+        <div class="journal-summary-bar__item">
+          <span class="journal-summary-bar__label"><span class="journal-summary-bar__emoji">🏆</span> Wins</span>
+          <span class="journal-summary-bar__value journal-summary-bar__value--positive" id="journalWins">0</span>
+        </div>
+        <div class="journal-summary-bar__divider"></div>
+        <div class="journal-summary-bar__item">
+          <span class="journal-summary-bar__label"><span class="journal-summary-bar__emoji">❌</span> Losses</span>
+          <span class="journal-summary-bar__value journal-summary-bar__value--negative" id="journalLosses">0</span>
+        </div>
+        <div class="journal-summary-bar__divider"></div>
+        <div class="journal-summary-bar__item">
+          <span class="journal-summary-bar__label"><span class="journal-summary-bar__emoji">🎯</span> Avg Win</span>
+          <span class="journal-summary-bar__value" id="journalAvgWin">—</span>
+        </div>
+        <div class="journal-summary-bar__divider"></div>
+        <div class="journal-summary-bar__item">
+          <span class="journal-summary-bar__label"><span class="journal-summary-bar__emoji">📉</span> Avg Loss</span>
+          <span class="journal-summary-bar__value" id="journalAvgLoss">—</span>
+        </div>
+      </div>
+
+      <!-- Journal Table Container -->
+      <div class="journal-table-container">
+        <table class="journal-table" id="journalTable">
+          <thead>
+            <tr>
+              <th data-sort="date" class="sortable">Date</th>
+              <th data-sort="ticker" class="sortable">Ticker</th>
+              <th data-sort="entry" class="sortable">Entry</th>
+              <th>Exit</th>
+              <th>Shares</th>
+              <th data-sort="pnl" class="sortable">P&L</th>
+              <th>R</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="journalTableBody">
+            <!-- Journal rows will be rendered here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="journal-empty" id="journalEmpty">
+        <span class="journal-empty__icon">📝</span>
+        <h2 class="journal-empty__title">No Trades Yet</h2>
+        <p class="journal-empty__text">Start logging trades from the Dashboard to build your trading history.</p>
+        <button class="btn btn--primary" id="journalGoToDashboard">Go to Dashboard</button>
+      </div>
+
+      <!-- Export Actions -->
+      <div class="journal-actions">
+        <button class="btn btn--secondary" id="journalExportCSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export CSV
+        </button>
+        <button class="btn btn--secondary" id="journalExportTSV">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Export TSV
+        </button>
+      </div>
+    </section>
+
+    <!-- Stats View (view swapped with main) -->
+    <section class="stats-view view--hidden" id="statsView">
+      <div class="stats-header">
+        <div class="stats-header__left">
+          <span class="stats-header__icon">📊</span>
+          <div>
+            <h1 class="stats-header__title">Trading Stats</h1>
+            <span class="stats-header__subtitle">All-time performance metrics</span>
+          </div>
+        </div>
+        <!-- Period selector (hidden, groundwork for future) -->
+        <div class="stats-header__period">
+          <div class="period-selector">
+            <button class="period-selector__btn period-selector__btn--active" data-period="all">All Time</button>
+            <button class="period-selector__btn" data-period="month">Month</button>
+            <button class="period-selector__btn" data-period="week">Week</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trading Performance Section -->
+      <div class="stats-section">
+        <div class="stats-section__header">
+          <span class="stats-section__icon">📈</span>
+          <h2 class="stats-section__title">Trading Performance</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-card__label">Open Positions</span>
+            <span class="stat-card__value" id="statOpenPositions">0</span>
+            <span class="stat-card__sub" id="statOpenRisk">$0 at risk</span>
+          </div>
+          <div class="stat-card" id="statPnLCard">
+            <span class="stat-card__label">Total P&L</span>
+            <span class="stat-card__value" id="statTotalPnL">$0.00</span>
+            <span class="stat-card__sub" id="statPnLTrades">0 closed trades</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">Win Rate</span>
+            <span class="stat-card__value" id="statWinRate">—</span>
+            <span class="stat-card__sub" id="statWinLoss">0W / 0L</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">Sharpe Ratio</span>
+            <span class="stat-card__value" id="statSharpe">—</span>
+            <span class="stat-card__sub">Risk-adjusted return</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Growth Section -->
+      <div class="stats-section">
+        <div class="stats-section__header">
+          <span class="stats-section__icon">💰</span>
+          <h2 class="stats-section__title">Account Growth</h2>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card stat-card--lg">
+            <span class="stat-card__label">Current Account</span>
+            <span class="stat-card__value" id="statCurrentAccount">$10,000</span>
+            <span class="stat-card__sub" id="statAccountChange">+$0.00 from start</span>
+          </div>
+          <div class="stat-card" id="statTradingGrowthCard">
+            <span class="stat-card__label">Trading Growth</span>
+            <span class="stat-card__value" id="statTradingGrowth">0.00%</span>
+            <span class="stat-card__sub">P&L / Starting</span>
+          </div>
+          <div class="stat-card" id="statTotalGrowthCard">
+            <span class="stat-card__label">Total Growth</span>
+            <span class="stat-card__value" id="statTotalGrowth">0.00%</span>
+            <span class="stat-card__sub">Including deposits</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">Net Cash Flow</span>
+            <span class="stat-card__value" id="statCashFlow">$0.00</span>
+            <span class="stat-card__sub">Deposits - Withdrawals</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equity Curve Chart -->
+      <div class="stats-section">
+        <div class="stats-chart">
+          <div class="stats-chart__header">
+            <h3 class="stats-chart__title">Equity Curve</h3>
+            <span class="stats-chart__value" id="statChartValue">$10,000</span>
+          </div>
+          <div class="stats-chart__container" id="equityChartContainer">
+            <canvas class="stats-chart__canvas" id="equityChartCanvas"></canvas>
+            <!-- Empty state (shown when no data) -->
+            <div class="stats-chart__empty" id="equityChartEmpty" style="display: none;">
+              <span class="stats-chart__empty-icon">📉</span>
+              <span class="stats-chart__empty-text">Close some trades to see your equity curve</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <!-- Settings Panel (Slide-out) -->
@@ -1187,7 +1475,7 @@
       </div>
 
       <nav class="footer__nav">
-        <a href="https://tm.skyler.tools" class="footer__link footer__link--active">Trade Manager</a>
+        <a href="https://tm.skyler.tools" class="footer__link footer__link--active">TradeDeck</a>
         <span class="footer__divider">·</span>
         <span class="footer__text">More tools soon</span>
       </nav>

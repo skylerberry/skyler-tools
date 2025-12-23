@@ -5,6 +5,8 @@
 
 import { state } from './state.js';
 import { showToast } from './ui.js';
+import { confetti } from './confetti.js';
+import { soundFx } from './soundFx.js';
 
 // Achievement definitions
 const ACHIEVEMENTS = {
@@ -98,13 +100,23 @@ class AchievementManager {
     // Add to unlocked list
     const unlocked = state.unlockAchievement(achievement.id);
 
-    if (unlocked && state.journalMeta.settings.celebrationsEnabled) {
+    if (unlocked) {
       // Queue the achievement notification
       this.queue.push(achievement);
 
       // Show immediately if first in queue
       if (this.queue.length === 1) {
         this.showNext();
+      }
+
+      // Trigger confetti and sound if celebrations enabled
+      if (state.journalMeta.settings.celebrationsEnabled) {
+        confetti.rain(30); // Achievement celebration
+      }
+
+      // Play achievement sound if sound enabled
+      if (state.journalMeta.settings.soundEnabled) {
+        soundFx.playAchievement();
       }
     }
   }

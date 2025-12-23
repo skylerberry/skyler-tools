@@ -1,6 +1,6 @@
 /**
- * Confetti - Lightweight celebration effect
- * Subtle ~15 particle burst for trade logging
+ * Confetti - Celebration rain effect
+ * Duolingo-inspired full-width gentle raindown
  */
 
 import { state } from './state.js';
@@ -11,12 +11,15 @@ class Confetti {
     this.ctx = null;
     this.particles = [];
     this.animationId = null;
+    this.spawnQueue = 0;
     this.colors = [
       '#22c55e', // success green
       '#3b82f6', // primary blue
       '#f59e0b', // warning amber
       '#ec4899', // pink
-      '#8b5cf6'  // purple
+      '#8b5cf6', // purple
+      '#06b6d4', // cyan
+      '#f97316'  // orange
     ];
   }
 
@@ -29,7 +32,10 @@ class Confetti {
     }
 
     // Listen for confetti trigger
-    state.on('triggerConfetti', () => this.burst());
+    state.on('triggerConfetti', (data) => {
+      const particleCount = data?.particleCount || 60;
+      this.rain(particleCount);
+    });
   }
 
   resize() {
@@ -38,7 +44,7 @@ class Confetti {
     this.canvas.height = window.innerHeight;
   }
 
-  burst(particleCount = 15) {
+  rain(particleCount = 60) {
     if (!this.canvas || !this.ctx) return;
 
     // Check if reduced motion is preferred
@@ -46,13 +52,8 @@ class Confetti {
       return;
     }
 
-    // Create particles from center-top area
-    const centerX = this.canvas.width / 2;
-    const centerY = this.canvas.height / 3;
-
-    for (let i = 0; i < particleCount; i++) {
-      this.particles.push(this.createParticle(centerX, centerY));
-    }
+    // Queue particles to spawn over time for staggered effect
+    this.spawnQueue += particleCount;
 
     // Start animation if not already running
     if (!this.animationId) {
@@ -60,24 +61,44 @@ class Confetti {
     }
   }
 
-  createParticle(x, y) {
-    const angle = Math.random() * Math.PI * 2;
-    const velocity = 3 + Math.random() * 4;
-    const size = 6 + Math.random() * 4;
+  createParticle() {
+    const width = this.canvas.width;
+
+    // Spawn across full width with some padding
+    const x = Math.random() * width;
+    const y = -20 - Math.random() * 40; // Start above viewport, staggered
+
+    // Gentle downward drift with slight horizontal sway
+    const vy = 2 + Math.random() * 2;
+    const vx = (Math.random() - 0.5) * 1.5;
+
+    // Varied sizes - mix of small and medium pieces
+    const size = 5 + Math.random() * 6;
+
+    // Confetti shapes: rectangles (streamers) and circles (dots)
+    const shapeRoll = Math.random();
+    let shape;
+    if (shapeRoll < 0.6) {
+      shape = 'streamer'; // Elongated rectangle
+    } else if (shapeRoll < 0.85) {
+      shape = 'square';
+    } else {
+      shape = 'circle';
+    }
 
     return {
       x,
       y,
-      vx: Math.cos(angle) * velocity,
-      vy: Math.sin(angle) * velocity - 2, // Slight upward bias
+      vx,
+      vy,
       size,
       color: this.colors[Math.floor(Math.random() * this.colors.length)],
       rotation: Math.random() * 360,
-      rotationSpeed: (Math.random() - 0.5) * 10,
-      opacity: 1,
-      gravity: 0.1,
-      friction: 0.99,
-      shape: Math.random() > 0.5 ? 'rect' : 'circle'
+      rotationSpeed: (Math.random() - 0.5) * 6,
+      wobble: Math.random() * Math.PI * 2, // Phase for sine wave wobble
+      wobbleSpeed: 0.03 + Math.random() * 0.02,
+      opacity: 0.9 + Math.random() * 0.1,
+      shape
     };
   }
 
@@ -86,44 +107,60 @@ class Confetti {
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Spawn queued particles gradually (staggered rain effect)
+    const spawnRate = Math.min(this.spawnQueue, 4); // Max 4 per frame
+    for (let i = 0; i < spawnRate; i++) {
+      this.particles.push(this.createParticle());
+      this.spawnQueue--;
+    }
+
     // Update and draw particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
 
-      // Physics
-      p.vy += p.gravity;
-      p.vx *= p.friction;
-      p.vy *= p.friction;
-      p.x += p.vx;
+      // Gentle physics - no gravity acceleration, just drift
+      p.wobble += p.wobbleSpeed;
+      p.x += p.vx + Math.sin(p.wobble) * 0.5; // Gentle side-to-side sway
       p.y += p.vy;
       p.rotation += p.rotationSpeed;
-      p.opacity -= 0.015;
 
-      // Draw
-      if (p.opacity > 0) {
+      // Fade out as it falls past 70% of screen
+      const fadeStart = this.canvas.height * 0.6;
+      const fadeEnd = this.canvas.height * 0.95;
+      if (p.y > fadeStart) {
+        const fadeProgress = (p.y - fadeStart) / (fadeEnd - fadeStart);
+        p.opacity = Math.max(0, 0.9 - fadeProgress);
+      }
+
+      // Draw if visible
+      if (p.opacity > 0 && p.y < this.canvas.height) {
         this.ctx.save();
         this.ctx.translate(p.x, p.y);
         this.ctx.rotate((p.rotation * Math.PI) / 180);
         this.ctx.globalAlpha = p.opacity;
         this.ctx.fillStyle = p.color;
 
-        if (p.shape === 'rect') {
-          this.ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        if (p.shape === 'streamer') {
+          // Elongated rectangle (classic confetti streamer)
+          this.ctx.fillRect(-p.size / 2, -p.size / 6, p.size, p.size / 3);
+        } else if (p.shape === 'square') {
+          this.ctx.fillRect(-p.size / 3, -p.size / 3, p.size * 0.66, p.size * 0.66);
         } else {
+          // Circle
           this.ctx.beginPath();
-          this.ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          this.ctx.arc(0, 0, p.size / 3, 0, Math.PI * 2);
           this.ctx.fill();
         }
 
         this.ctx.restore();
       } else {
-        // Remove faded particle
+        // Remove particle when faded or off screen
         this.particles.splice(i, 1);
       }
     }
 
-    // Continue animation if particles remain
-    if (this.particles.length > 0) {
+    // Continue animation if particles remain or more to spawn
+    if (this.particles.length > 0 || this.spawnQueue > 0) {
       this.animationId = requestAnimationFrame(() => this.animate());
     } else {
       this.animationId = null;

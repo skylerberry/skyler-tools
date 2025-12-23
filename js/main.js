@@ -15,6 +15,11 @@ import { achievements } from './achievements.js';
 import { soundFx } from './soundFx.js';
 import { dataManager } from './dataManager.js';
 import { clearDataModal } from './clearDataModal.js';
+import { viewManager } from './viewManager.js';
+import { stats } from './stats.js';
+import { equityChart } from './statsChart.js';
+import { positionsView } from './positionsView.js';
+import { journalView } from './journalView.js';
 
 class App {
   constructor() {
@@ -22,7 +27,7 @@ class App {
   }
 
   init() {
-    console.log('Initializing Trade Manager...');
+    console.log('Initializing TradeDeck...');
 
     // Set up module references for dataManager to avoid circular dependencies
     dataManager.setModules(settings, calculator, journal, clearDataModal);
@@ -60,6 +65,17 @@ class App {
     // Initialize clear data modal
     clearDataModal.init();
 
+    // Initialize view manager (4-view navigation)
+    viewManager.init();
+
+    // Initialize stats and chart
+    stats.init();
+    equityChart.init();
+
+    // Initialize positions and journal views
+    positionsView.init();
+    journalView.init();
+
     // Initialize keyboard shortcuts
     keyboard.init();
 
@@ -84,7 +100,7 @@ class App {
     // Expose global functions for HTML onclick handlers
     this.setupGlobalFunctions();
 
-    console.log('Trade Manager initialized successfully');
+    console.log('TradeDeck initialized successfully');
   }
 
   setupGlobalEvents() {

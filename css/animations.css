@@ -641,6 +641,70 @@ html.theme-transitioning *::after {
               stroke 0.4s ease-out !important;
 }
 
+/* === View Swap Transitions === */
+
+@keyframes viewSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes viewSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes viewFadeScale {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.view--hiding {
+  animation: viewSlideOut 0.2s ease-out forwards;
+  pointer-events: none;
+}
+
+.view--entering {
+  animation: viewSlideIn 0.3s ease-out forwards;
+}
+
+/* Mobile: Use fade + scale instead of slide */
+@media (max-width: 768px) {
+  .view--hiding {
+    animation: fadeOut 0.15s ease-out forwards;
+  }
+
+  .view--entering {
+    animation: viewFadeScale 0.25s ease-out forwards;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* === Reduced Motion === */
 
 @media (prefers-reduced-motion: reduce) {
