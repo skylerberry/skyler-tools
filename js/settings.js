@@ -208,6 +208,28 @@ class Settings {
     }
   }
 
+  syncPresetButtons() {
+    // Sync defaultRisk preset buttons
+    const savedRisk = state.settings.defaultRiskPercent;
+    document.querySelectorAll('.preset-btn[data-setting="defaultRisk"]').forEach(btn => {
+      const btnValue = parseFloat(btn.dataset.value);
+      btn.classList.toggle('active', btnValue === savedRisk);
+    });
+
+    // Sync defaultMaxPos preset buttons
+    const savedMaxPos = state.settings.defaultMaxPositionPercent;
+    document.querySelectorAll('.preset-btn[data-setting="defaultMaxPos"]').forEach(btn => {
+      const btnValue = parseFloat(btn.dataset.value);
+      btn.classList.toggle('active', btnValue === savedMaxPos);
+    });
+
+    // Sync theme preset buttons
+    const savedTheme = state.settings.theme || 'dark';
+    document.querySelectorAll('.preset-btn[data-setting="theme"]').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === savedTheme);
+    });
+  }
+
   loadAndApply() {
     // Load saved settings
     state.loadSettings();
@@ -267,6 +289,9 @@ class Settings {
     if (this.elements.maxPositionPercent) {
       this.elements.maxPositionPercent.value = state.settings.defaultMaxPositionPercent;
     }
+
+    // Sync preset button active states to match loaded settings
+    this.syncPresetButtons();
 
     // Update header
     this.updateAccountDisplay(state.account.currentSize);
