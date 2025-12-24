@@ -19,7 +19,8 @@ class AlertParser {
     this.elements = {
       alertCard: document.getElementById('alertCard'),
       pasteBtn: document.getElementById('pasteAlertBtn'),
-      shortcutHint: document.getElementById('shortcutHint')
+      shortcutHint: document.getElementById('shortcutHint'),
+      discordHint: document.getElementById('discordHint')
     };
   }
 
@@ -44,18 +45,23 @@ class AlertParser {
   }
 
   setShortcutHint() {
-    if (!this.elements.shortcutHint) return;
-
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    if (isMobile) {
-      this.elements.shortcutHint.textContent = 'Tap to paste';
-    } else {
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const textSpan = this.elements.shortcutHint.querySelector('.shortcut-text');
-      if (textSpan) {
-        textSpan.textContent = isMac ? '⌘V' : 'Ctrl+V';
+    if (this.elements.shortcutHint) {
+      if (isMobile) {
+        this.elements.shortcutHint.textContent = 'Tap to paste';
+      } else {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+        const textSpan = this.elements.shortcutHint.querySelector('.shortcut-text');
+        if (textSpan) {
+          textSpan.textContent = isMac ? '⌘V' : 'Ctrl+V';
+        }
       }
+    }
+
+    // Update Discord hint text for mobile
+    if (this.elements.discordHint && isMobile) {
+      this.elements.discordHint.textContent = '(or tap to paste Discord alert to auto-fill)';
     }
   }
 
