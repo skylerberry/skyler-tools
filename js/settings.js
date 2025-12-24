@@ -190,17 +190,32 @@ class Settings {
     const btn = e.target.closest('.preset-btn[data-setting]');
     if (!btn) return;
 
+    e.preventDefault();
+    e.stopPropagation();
+
     const setting = btn.dataset.setting;
     const value = btn.dataset.value;
     const group = btn.closest('.preset-group');
+
+    if (!setting || !value) {
+      return;
+    }
 
     group.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
     if (setting === 'defaultRisk') {
-      state.updateSettings({ defaultRiskPercent: parseFloat(value) });
+      const riskValue = parseFloat(value);
+      state.updateSettings({ defaultRiskPercent: riskValue });
+      // Also update current account risk to match default
+      state.updateAccount({ riskPercent: riskValue });
     } else if (setting === 'defaultMaxPos') {
-      state.updateSettings({ defaultMaxPositionPercent: parseFloat(value) });
+      const maxPosValue = parseFloat(value);
+      state.updateSettings({ defaultMaxPositionPercent: maxPosValue });
+      // Also update current account max position to match default
+      state.updateAccount({ maxPositionPercent: maxPosValue });
+      // Sync Quick Settings preset buttons
+      this.syncQuickSettingsMaxPositionPresets(maxPosValue);
     } else if (setting === 'theme') {
       document.documentElement.dataset.theme = value;
       state.updateSettings({ theme: value });
@@ -228,6 +243,24 @@ class Settings {
     document.querySelectorAll('.preset-btn[data-setting="theme"]').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.value === savedTheme);
     });
+  }
+
+  syncQuickSettingsMaxPositionPresets(maxPosValue) {
+    // Sync Quick Settings max position preset buttons (in .settings-grid)
+    const settingsGrid = document.querySelector('.settings-grid');
+    if (settingsGrid) {
+      const settingsItems = settingsGrid.querySelectorAll('.settings-item');
+      if (settingsItems.length >= 2) {
+        const maxPosItem = settingsItems[1]; // Second item is Max Position Size
+        const presetGroup = maxPosItem.querySelector('.preset-group');
+        if (presetGroup) {
+          presetGroup.querySelectorAll('.preset-btn').forEach(btn => {
+            const btnValue = parseFloat(btn.dataset.value);
+            btn.classList.toggle('active', btnValue === maxPosValue);
+          });
+        }
+      }
+    }
   }
 
   loadAndApply() {

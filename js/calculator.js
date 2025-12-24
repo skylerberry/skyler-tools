@@ -15,6 +15,7 @@ class Calculator {
     this.cacheElements();
     this.bindEvents();
     this.syncRiskButton();
+    this.syncMaxPositionPresets();
     this.calculate();
   }
 
@@ -29,6 +30,26 @@ class Calculator {
         btn.classList.remove('risk-btn--active');
       }
     });
+  }
+
+  syncMaxPositionPresets() {
+    // Sync Quick Settings max position preset buttons with current max position percent
+    const currentMaxPos = state.account.maxPositionPercent || state.settings.defaultMaxPositionPercent;
+    const settingsGrid = document.querySelector('.settings-grid');
+    if (settingsGrid) {
+      // Find the Max Position Size settings item (second item in settings-grid)
+      const settingsItems = settingsGrid.querySelectorAll('.settings-item');
+      if (settingsItems.length >= 2) {
+        const maxPosItem = settingsItems[1]; // Second item is Max Position Size
+        const presetGroup = maxPosItem.querySelector('.preset-group');
+        if (presetGroup) {
+          presetGroup.querySelectorAll('.preset-btn').forEach(btn => {
+            const btnValue = parseFloat(btn.dataset.value);
+            btn.classList.toggle('active', btnValue === currentMaxPos);
+          });
+        }
+      }
+    }
   }
 
   cacheElements() {

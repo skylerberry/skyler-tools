@@ -198,7 +198,15 @@ class AppState {
       const saved = localStorage.getItem('riskCalcSettings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        Object.assign(this.state.settings, parsed);
+        // Replace settings object entirely to ensure all properties are reset
+        this.state.settings = {
+          startingAccountSize: parsed.startingAccountSize ?? 10000,
+          defaultRiskPercent: parsed.defaultRiskPercent ?? 1,
+          defaultMaxPositionPercent: parsed.defaultMaxPositionPercent ?? 100,
+          dynamicAccountEnabled: parsed.dynamicAccountEnabled ?? true,
+          theme: parsed.theme ?? 'dark',
+          sarMember: parsed.sarMember ?? true
+        };
         this.state.account.currentSize = this.state.settings.startingAccountSize;
         this.state.account.riskPercent = this.state.settings.defaultRiskPercent;
         this.state.account.maxPositionPercent = this.state.settings.defaultMaxPositionPercent;

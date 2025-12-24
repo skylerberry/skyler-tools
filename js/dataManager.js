@@ -114,12 +114,13 @@ export const dataManager = {
     localStorage.removeItem('riskCalcJournalMeta');
 
     // Reset state
+    const savedTheme = state.settings.theme; // Preserve theme
     state.state.settings = {
       startingAccountSize: 10000,
       defaultRiskPercent: 1,
       defaultMaxPositionPercent: 100,
       dynamicAccountEnabled: true,
-      theme: state.settings.theme, // Keep theme
+      theme: savedTheme, // Keep theme
       sarMember: true
     };
     state.state.account = {
@@ -150,6 +151,11 @@ export const dataManager = {
       },
       schemaVersion: 1
     };
+
+    // Save the reset state to localStorage so it persists
+    state.saveSettings();
+    state.saveJournal();
+    state.saveJournalMeta();
 
     // Refresh UI
     if (settingsModule) settingsModule.loadAndApply();

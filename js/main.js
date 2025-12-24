@@ -32,11 +32,11 @@ class App {
     // Set up module references for dataManager to avoid circular dependencies
     dataManager.setModules(settings, calculator, journal, clearDataModal);
 
-    // Initialize theme first (handles saved preference)
-    theme.init();
-
-    // Initialize settings (loads saved data)
+    // Initialize settings FIRST (loads saved data before theme.init saves defaults)
     settings.init();
+
+    // Initialize theme after settings are loaded (so it doesn't overwrite saved settings)
+    theme.init();
 
     // Initialize calculator
     calculator.init();

@@ -59,9 +59,13 @@ class ThemeManager {
   init() {
     this.themeBtn = document.getElementById('themeBtn');
 
-    // Theme is already set by preload script in HTML head. Just sync state.
-    const initialTheme = document.documentElement.dataset.theme || 'dark';
-    state.updateSettings({ theme: initialTheme });
+    // Theme is already set by preload script in HTML head.
+    // Settings.init() runs first and loads saved settings (including theme).
+    // Just sync the DOM theme attribute with the loaded state, don't trigger save.
+    const loadedTheme = state.settings.theme || 'dark';
+    document.documentElement.dataset.theme = loadedTheme;
+    // Sync state property without triggering saveSettings()
+    state.state.settings.theme = loadedTheme;
 
     // Bind toggle
     if (this.themeBtn) {
