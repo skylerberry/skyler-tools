@@ -595,16 +595,11 @@ class Calculator {
     if (parsed.target && this.elements.targetPrice) this.elements.targetPrice.value = parsed.target;
 
     if (parsed.riskPercent) {
-      if (this.elements.riskPercent) this.elements.riskPercent.value = parsed.riskPercent;
       state.updateAccount({ riskPercent: parsed.riskPercent });
-
-      // Update preset buttons
-      const riskCard = this.elements.riskPercent?.closest('.card');
-      if (riskCard) {
-        riskCard.querySelectorAll('.preset-btn').forEach(btn => {
-          btn.classList.toggle('active', parseFloat(btn.dataset.value) === parsed.riskPercent);
-        });
-      }
+      // Update custom risk input if it exists
+      if (this.elements.customRisk) this.elements.customRisk.value = parsed.riskPercent;
+      // Sync risk button active state
+      this.syncRiskButton();
     }
 
     this.calculate();
