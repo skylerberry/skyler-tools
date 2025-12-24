@@ -237,7 +237,7 @@ class Calculator {
     this.calculate();
 
     // Show feedback
-    showToast('Calculator cleared', 'success');
+    showToast('🧹 Calculator cleared', 'success');
   }
 
   handlePresetClick(e) {

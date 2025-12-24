@@ -28,6 +28,7 @@ class TrimModal {
       confirmBtn: document.getElementById('confirmTrimBtn'),
       ticker: document.getElementById('trimModalTicker'),
       entryPrice: document.getElementById('trimEntryPrice'),
+      originalStop: document.getElementById('trimOriginalStop'),
       stopLoss: document.getElementById('trimStopLoss'),
       riskPerShare: document.getElementById('trimRiskPerShare'),
       remainingShares: document.getElementById('trimRemainingShares'),
@@ -35,6 +36,7 @@ class TrimModal {
       rDisplay: document.getElementById('trimRDisplay'),
       customTrimPercent: document.getElementById('customTrimPercent'),
       dateInput: document.getElementById('trimDate'),
+      newStop: document.getElementById('trimNewStop'),
       sharesClosing: document.getElementById('trimSharesClosing'),
       sharesRemaining: document.getElementById('trimSharesRemaining'),
       profitPerShare: document.getElementById('trimProfitPerShare'),
@@ -74,7 +76,7 @@ class TrimModal {
   open(tradeId) {
     const trade = state.journal.entries.find(e => e.id === tradeId);
     if (!trade) {
-      showToast('Trade not found', 'error');
+      showToast('❌ Trade not found', 'error');
       return;
     }
 
@@ -122,13 +124,19 @@ class TrimModal {
 
   populateTradeData(trade) {
     const remainingShares = trade.remainingShares ?? trade.shares;
-    const riskPerShare = trade.entry - trade.stop;
+    const originalStop = trade.originalStop ?? trade.stop;
+    const currentStop = trade.currentStop ?? trade.stop;
+    const riskPerShare = trade.entry - originalStop;
 
     if (this.elements.ticker) this.elements.ticker.textContent = trade.ticker;
     if (this.elements.entryPrice) this.elements.entryPrice.textContent = formatCurrency(trade.entry);
-    if (this.elements.stopLoss) this.elements.stopLoss.textContent = formatCurrency(trade.stop);
+    if (this.elements.originalStop) this.elements.originalStop.textContent = formatCurrency(originalStop);
+    if (this.elements.stopLoss) this.elements.stopLoss.textContent = formatCurrency(currentStop);
     if (this.elements.riskPerShare) this.elements.riskPerShare.textContent = formatCurrency(riskPerShare);
     if (this.elements.remainingShares) this.elements.remainingShares.textContent = formatNumber(remainingShares);
+
+    // Clear new stop input
+    if (this.elements.newStop) this.elements.newStop.value = '';
   }
 
   selectR(e) {
@@ -139,8 +147,30 @@ class TrimModal {
     this.elements.modal?.querySelectorAll('[data-r]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
+    // Auto-suggest trim percentage based on 1/(1+R) rule
+    // 1R → 50%, 2R → 33%, 3R → 25%, 4R → 20%, 5R → 17%
+    const suggestedTrimPercent = Math.round((1 / (1 + this.selectedR)) * 100);
+    this.setTrimPercent(suggestedTrimPercent);
+
     this.calculateExitPrice();
     this.calculatePreview();
+  }
+
+  setTrimPercent(percent) {
+    this.selectedTrimPercent = percent;
+
+    // Update trim preset button states
+    this.elements.modal?.querySelectorAll('[data-trim]').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.trim) === percent);
+    });
+
+    // If no preset matches, show in custom input
+    const hasMatchingPreset = Array.from(this.elements.modal?.querySelectorAll('[data-trim]') || [])
+      .some(btn => parseInt(btn.dataset.trim) === percent);
+
+    if (this.elements.customTrimPercent) {
+      this.elements.customTrimPercent.value = hasMatchingPreset ? '' : percent;
+    }
   }
 
   selectTrimPercent(e) {
@@ -224,7 +254,7 @@ class TrimModal {
 
     const exitPrice = parseFloat(this.elements.exitPrice?.value);
     if (isNaN(exitPrice) || exitPrice <= 0) {
-      showToast('Please enter a valid exit price', 'error');
+      showToast('⚠️ Please enter a valid exit price', 'error');
       return;
     }
 
@@ -232,7 +262,7 @@ class TrimModal {
     const sharesToClose = Math.floor(remainingShares * (this.selectedTrimPercent / 100));
 
     if (sharesToClose <= 0) {
-      showToast('No shares to close', 'error');
+      showToast('⚠️ No shares to close', 'error');
       return;
     }
 
@@ -264,11 +294,19 @@ class TrimModal {
 
     const updates = {
       originalShares: this.currentTrade.originalShares ?? this.currentTrade.shares,
+      originalStop: this.currentTrade.originalStop ?? this.currentTrade.stop,
       remainingShares: sharesAfterTrim,
       status: newStatus,
       trimHistory: [...this.currentTrade.trimHistory, trimEvent],
       totalRealizedPnL: newTotalPnL
     };
+
+    // Update current stop if new stop provided
+    const newStopValue = parseFloat(this.elements.newStop?.value);
+    if (!isNaN(newStopValue) && newStopValue > 0) {
+      updates.currentStop = newStopValue;
+      updates.stop = newStopValue; // Also update main stop for compatibility
+    }
 
     if (isFullClose) {
       updates.exitPrice = exitPrice;
@@ -286,8 +324,9 @@ class TrimModal {
     }
 
     const actionText = isFullClose ? 'closed' : `trimmed ${this.selectedTrimPercent}%`;
+    const emoji = pnl >= 0 ? '✅' : '📉';
     showToast(
-      `${this.currentTrade.ticker} ${actionText}: ${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}`,
+      `${emoji} ${this.currentTrade.ticker} ${actionText}: ${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}`,
       pnl >= 0 ? 'success' : 'warning'
     );
 

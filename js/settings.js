@@ -404,7 +404,7 @@ class Settings {
     // Emit for calculator to recalculate
     state.emit('accountSizeChanged', state.account.currentSize);
 
-    showToast('Account reset to starting balance', 'success');
+    showToast('🔄 Account reset to starting balance', 'success');
   }
 }
 

@@ -118,7 +118,7 @@ class Journal {
     }
     if (this.elements.exportPDFBtn) {
       this.elements.exportPDFBtn.addEventListener('click', () => {
-        showToast('PDF export coming soon. Use CSV for now.', 'warning');
+        showToast('📄 PDF export coming soon. Use CSV for now.', 'warning');
       });
     }
 
@@ -143,7 +143,7 @@ class Journal {
     const trade = state.trade;
 
     if (!results.shares || results.shares === 0) {
-      showToast('Enter a valid trade to log', 'warning');
+      showToast('⚠️ Enter a valid trade to log', 'warning');
       return;
     }
 
@@ -161,6 +161,8 @@ class Journal {
       ticker: trade.ticker || 'UNKNOWN',
       entry: trade.entry,
       stop: trade.stop,
+      originalStop: trade.stop,
+      currentStop: trade.stop,
       target: trade.target,
       shares: results.shares,
       positionSize: results.positionSize,
@@ -210,7 +212,7 @@ class Journal {
       this.elements.tradeNotes.value = '';
     }
 
-    showToast(`${entry.ticker} trade logged!`, 'success');
+    showToast(`✅ ${entry.ticker} trade logged!`, 'success');
 
     // Disable button after logging (will re-enable when new calculation happens)
     this.updateLogButtonState({ shares: 0 });
@@ -245,7 +247,7 @@ class Journal {
 
     const deleted = state.deleteJournalEntry(id);
     if (deleted) {
-      showToast('Trade deleted', 'success');
+      showToast('🗑️ Trade deleted', 'success');
     }
   }
 
@@ -314,7 +316,7 @@ class Journal {
           </div>
           <div class="trade-card__actions">
             <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">${isTrimmed ? 'Trim More' : 'Close'}</button>
-            <button class="btn btn--sm btn--ghost" onclick="deleteTrade(${trade.id})">Delete</button>
+            <button class="btn btn--sm btn--secondary btn--danger-outline" onclick="deleteTrade(${trade.id})">Delete</button>
           </div>
         </div>
       `;

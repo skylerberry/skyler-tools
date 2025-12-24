@@ -308,7 +308,8 @@
                     </span>
                   </label>
                   <div class="preset-group preset-group--compact">
-                    <button class="preset-btn" data-value="25">25%</button>
+                    <button class="preset-btn" data-value="10">10%</button>
+                    <button class="preset-btn" data-value="20">20%</button>
                     <button class="preset-btn" data-value="50">50%</button>
                     <button class="preset-btn active" data-value="100">100%</button>
                   </div>
@@ -556,12 +557,12 @@
           <!-- Quick Log -->
           <div class="card card--highlight">
             <div class="card__header">
-              <span class="card__icon">✚</span>
+              <span class="card__icon">📝</span>
               <h2 class="card__title">Log This Trade</h2>
             </div>
             <div class="card__body">
               <div class="input-group">
-                <label class="input-label" for="tradeNotes">Quick note <span class="label-optional">(Recommended)</span></label>
+                <label class="input-label" for="tradeNotes">📝 Quick note <span class="label-optional">(Recommended)</span></label>
                 <textarea
                   class="input input--textarea"
                   id="tradeNotes"
@@ -918,7 +919,6 @@
             <button type="button" class="preset-btn" data-setting="defaultMaxPos" data-value="10">10%</button>
             <button type="button" class="preset-btn" data-setting="defaultMaxPos" data-value="20">20%</button>
             <button type="button" class="preset-btn" data-setting="defaultMaxPos" data-value="50">50%</button>
-            <button type="button" class="preset-btn" data-setting="defaultMaxPos" data-value="75">75%</button>
             <button type="button" class="preset-btn active" data-setting="defaultMaxPos" data-value="100">100%</button>
           </div>
         </div>
@@ -1102,7 +1102,11 @@
           <span class="trim-summary__value" id="trimEntryPrice">$0.00</span>
         </div>
         <div class="trim-summary__row">
-          <span class="trim-summary__label">Stop Loss</span>
+          <span class="trim-summary__label">Original Stop</span>
+          <span class="trim-summary__value" id="trimOriginalStop">$0.00</span>
+        </div>
+        <div class="trim-summary__row">
+          <span class="trim-summary__label">Current Stop</span>
           <span class="trim-summary__value" id="trimStopLoss">$0.00</span>
         </div>
         <div class="trim-summary__row">
@@ -1122,6 +1126,7 @@
           <button type="button" class="preset-btn" data-r="1">1R</button>
           <button type="button" class="preset-btn" data-r="2">2R</button>
           <button type="button" class="preset-btn" data-r="3">3R</button>
+          <button type="button" class="preset-btn" data-r="4">4R</button>
           <button type="button" class="preset-btn active" data-r="5">5R</button>
         </div>
 
@@ -1172,6 +1177,20 @@
         </div>
       </div>
 
+      <!-- Update Stop Loss (optional) -->
+      <div class="trim-section">
+        <div class="input-group input-group--inline">
+          <label class="input-label" for="trimNewStop">
+            New Stop
+            <span class="label-optional">(optional)</span>
+          </label>
+          <div class="input-wrapper input-wrapper--prefix input-wrapper--sm">
+            <span class="input-prefix">$</span>
+            <input type="text" class="input input--mono" id="trimNewStop" placeholder="—">
+          </div>
+        </div>
+      </div>
+
       <!-- P&L Preview -->
       <div class="trim-preview" id="trimPreview">
         <div class="trim-preview__header">P&L Preview</div>
@@ -1188,7 +1207,7 @@
 
     <div class="modal__footer">
       <button class="btn btn--ghost" id="cancelTrimBtn">Cancel</button>
-      <button class="btn btn--success" id="confirmTrimBtn">Confirm Close</button>
+      <button class="btn btn--success" id="confirmTrimBtn">✅ Confirm Close</button>
     </div>
   </div>
 
@@ -1196,7 +1215,7 @@
   <div class="modal-overlay" id="wizardModalOverlay"></div>
   <div class="modal modal--wizard" id="wizardModal">
     <div class="modal__header">
-      <h2 class="modal__title">Log Trade</h2>
+      <h2 class="modal__title">📝 Log Trade</h2>
       <button class="icon-btn" id="closeWizardBtn" aria-label="Close wizard">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1398,7 +1417,7 @@
 
         <div class="wizard-step__actions">
           <button class="btn btn--ghost" id="wizardBack4">Back</button>
-          <button class="btn btn--success btn--pulse" id="wizardConfirmBtn">Log Trade</button>
+          <button class="btn btn--success btn--pulse" id="wizardConfirmBtn">✅ Log Trade</button>
         </div>
       </div>
     </div>

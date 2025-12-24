@@ -10,7 +10,9 @@
       "Bash(git restore:*)",
       "Bash(git pull:*)",
       "Bash(git show:*)",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(wc:*)",
+      "Bash(git -C /Users/skylerberry/skyler-tools-local/skyler-tools log --oneline -20)"
     ]
   }
 }

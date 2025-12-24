@@ -45,12 +45,17 @@ class AlertParser {
 
   setShortcutHint() {
     if (!this.elements.shortcutHint) return;
-    
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-    const textSpan = this.elements.shortcutHint.querySelector('.shortcut-text');
-    
-    if (textSpan) {
-      textSpan.textContent = isMac ? '⌘V' : 'Ctrl+V';
+
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      this.elements.shortcutHint.textContent = 'Tap to paste';
+    } else {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const textSpan = this.elements.shortcutHint.querySelector('.shortcut-text');
+      if (textSpan) {
+        textSpan.textContent = isMac ? '⌘V' : 'Ctrl+V';
+      }
     }
   }
 
@@ -68,14 +73,14 @@ class AlertParser {
 
       if (!text || !text.trim()) {
         this.flashButton('error');
-        showToast('Clipboard is empty', 'warning');
+        showToast('⚠️ Clipboard is empty', 'warning');
         return;
       }
 
       await this.parseAndFill(text);
     } catch (err) {
       console.error('Failed to read clipboard:', err);
-      showToast('Could not read clipboard. Try pasting manually.', 'error');
+      showToast('❌ Could not read clipboard. Try pasting manually.', 'error');
     }
   }
 
@@ -137,7 +142,7 @@ class AlertParser {
 
     if (!parsed || (!parsed.ticker && !parsed.entry && !parsed.stop)) {
       this.flashButton('error');
-      showToast('Could not parse alert', 'warning');
+      showToast('⚠️ Could not parse alert', 'warning');
       return;
     }
 
@@ -152,7 +157,7 @@ class AlertParser {
     if (parsed.riskPercent) parts.push(`${parsed.riskPercent}%`);
 
     this.flashButton('success');
-    showToast(`Parsed: ${parts.join(' | ')}`, 'success');
+    showToast(`⚡ Parsed: ${parts.join(' | ')}`, 'success');
 
     // On mobile, scroll to Position Details section
     this.scrollToResultsOnMobile();

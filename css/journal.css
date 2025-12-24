@@ -247,6 +247,22 @@
   background: var(--success-muted);
 }
 
+/* Breakeven Tag */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+}
+
+.tag--breakeven {
+  color: var(--text-muted);
+  background: var(--surface-alt);
+}
+
 /* Table P&L Cell */
 .journal-table__pnl--positive {
   color: var(--success);

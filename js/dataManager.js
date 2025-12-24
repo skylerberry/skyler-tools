@@ -41,7 +41,7 @@ export const dataManager = {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    showToast('Data exported successfully', 'success');
+    showToast('📥 Data exported successfully', 'success');
     console.log(`Data exported: ${data.journal.length} trades`);
   },
 
@@ -60,7 +60,7 @@ export const dataManager = {
           const data = JSON.parse(event.target.result);
 
           if (!data.settings || !data.journal) {
-            showToast('Invalid backup file format', 'error');
+            showToast('❌ Invalid backup file format', 'error');
             return;
           }
 
@@ -90,11 +90,11 @@ export const dataManager = {
           if (calculatorModule) calculatorModule.calculate();
           if (journalModule) journalModule.render();
 
-          showToast(`Imported ${data.journal.length} trades`, 'success');
+          showToast(`📤 Imported ${data.journal.length} trades`, 'success');
           console.log(`Data imported: ${data.journal.length} trades from backup`);
         } catch (err) {
           console.error('Import error:', err);
-          showToast('Failed to import data', 'error');
+          showToast('❌ Failed to import data', 'error');
         }
       };
       reader.readAsText(file);
@@ -163,14 +163,14 @@ export const dataManager = {
     if (journalModule) journalModule.render();
 
     if (clearDataModalModule) clearDataModalModule.close();
-    showToast('All data cleared', 'success');
+    showToast('🗑️ All data cleared', 'success');
     console.log('All data cleared - reset to defaults');
   },
 
   exportCSV() {
     const trades = state.journal.entries;
     if (trades.length === 0) {
-      showToast('No trades to export', 'warning');
+      showToast('⚠️ No trades to export', 'warning');
       return;
     }
 
@@ -193,13 +193,13 @@ export const dataManager = {
 
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     this.downloadFile(csv, 'trades.csv', 'text/csv');
-    showToast('CSV exported', 'success');
+    showToast('📥 CSV exported', 'success');
   },
 
   exportTSV() {
     const trades = state.journal.entries;
     if (trades.length === 0) {
-      showToast('No trades to export', 'warning');
+      showToast('⚠️ No trades to export', 'warning');
       return;
     }
 
@@ -222,13 +222,13 @@ export const dataManager = {
 
     const tsv = [headers.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
     this.downloadFile(tsv, 'trades.tsv', 'text/tab-separated-values');
-    showToast('TSV exported', 'success');
+    showToast('📥 TSV exported', 'success');
   },
 
   copyCSV() {
     const trades = state.journal.entries;
     if (trades.length === 0) {
-      showToast('No trades to copy', 'warning');
+      showToast('⚠️ No trades to copy', 'warning');
       return;
     }
 
@@ -246,16 +246,16 @@ export const dataManager = {
 
     const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     navigator.clipboard.writeText(csv).then(() => {
-      showToast('CSV copied to clipboard', 'success');
+      showToast('📋 CSV copied to clipboard', 'success');
     }).catch(() => {
-      showToast('Failed to copy', 'error');
+      showToast('❌ Failed to copy', 'error');
     });
   },
 
   copyTSV() {
     const trades = state.journal.entries;
     if (trades.length === 0) {
-      showToast('No trades to copy', 'warning');
+      showToast('⚠️ No trades to copy', 'warning');
       return;
     }
 
@@ -273,9 +273,9 @@ export const dataManager = {
 
     const tsv = [headers.join('\t'), ...rows.map(r => r.join('\t'))].join('\n');
     navigator.clipboard.writeText(tsv).then(() => {
-      showToast('TSV copied to clipboard (paste into Excel)', 'success');
+      showToast('📋 TSV copied to clipboard (paste into Excel)', 'success');
     }).catch(() => {
-      showToast('Failed to copy', 'error');
+      showToast('❌ Failed to copy', 'error');
     });
   },
 

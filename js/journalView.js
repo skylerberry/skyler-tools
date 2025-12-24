@@ -300,7 +300,7 @@ class JournalView {
 
       // Calculate R-multiple
       let rMultiple = null;
-      if (hasPnL && pnl !== 0 && trade.riskDollars > 0) {
+      if (hasPnL && trade.riskDollars > 0) {
         rMultiple = pnl / trade.riskDollars;
       }
 
@@ -316,7 +316,7 @@ class JournalView {
           <td class="${hasPnL ? (pnl >= 0 ? 'journal-table__pnl--positive' : 'journal-table__pnl--negative') : ''}">
             ${hasPnL ? `${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}` : '—'}
           </td>
-          <td>${rMultiple !== null ? `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(1)}R` : '—'}</td>
+          <td>${rMultiple !== null ? (Math.abs(rMultiple) < 0.05 ? '<span class="tag tag--breakeven">BE</span>' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(1)}R`) : '—'}</td>
           <td>
             <span class="journal-table__status journal-table__status--${trade.status}">
               ${trade.status.charAt(0).toUpperCase() + trade.status.slice(1)}

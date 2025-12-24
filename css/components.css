@@ -3132,6 +3132,7 @@
 
 .modal--wizard {
   max-width: 500px;
+  max-height: 90vh;
   overflow: hidden;
 }
 
@@ -3212,8 +3213,9 @@
 /* Wizard Steps Container */
 .wizard-steps {
   position: relative;
-  min-height: 320px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .wizard-step {
@@ -3690,6 +3692,16 @@
 
 .btn--danger:hover {
   background: color-mix(in srgb, var(--danger) 85%, black);
+}
+
+.btn--danger-outline {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn--danger-outline:hover {
+  background: var(--danger);
+  color: white;
 }
 
 /* ============================================

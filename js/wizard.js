@@ -386,6 +386,8 @@ class TradeWizard {
       ticker: trade.ticker,
       entry: trade.entry,
       stop: trade.stop,
+      originalStop: trade.stop,
+      currentStop: trade.stop,
       target: trade.target,
       shares: results.shares,
       positionSize: results.positionSize,
@@ -450,11 +452,11 @@ class TradeWizard {
 
   showSuccessToast() {
     const messages = [
-      "Trade logged! Good luck!",
-      "Nice setup! Tracked.",
-      "You're on a roll! Trade saved.",
-      "Disciplined trader! Logged.",
-      "Trade captured! Let's go!"
+      "✅ Trade logged! Good luck!",
+      "🎯 Nice setup! Tracked.",
+      "🔥 You're on a roll! Trade saved.",
+      "📝 Disciplined trader! Logged.",
+      "✅ Trade captured! Let's go!"
     ];
     const message = messages[Math.floor(Math.random() * messages.length)];
     showToast(message, 'success');
