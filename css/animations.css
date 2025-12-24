@@ -583,6 +583,7 @@ a:hover::after {
   /* Use simpler fade animation on mobile - no translateY to prevent overlap */
   .panel {
     animation: fadeIn 0.25s ease-out;
+    will-change: auto; /* Reset will-change to prevent layer issues */
   }
 
   /* Ensure panels don't visually overlap during render */
@@ -590,7 +591,7 @@ a:hover::after {
   .panel--results,
   .panel--journal {
     animation-delay: 0ms;
-    transform: none;
+    transform: none !important; /* Force no transforms for stable stacking */
   }
 
   /* Reduce result card animation intensity */

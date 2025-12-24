@@ -377,6 +377,14 @@
   display: grid;
 }
 
+/* Mobile: override grid with flex for dashboard */
+@media (max-width: 600px) {
+  .main.view--active {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 .positions-view.view--active,
 .journal-view.view--active,
 .stats-view.view--active {
