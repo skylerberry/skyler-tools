@@ -11,7 +11,8 @@ class ViewManager {
       dashboard: null,
       positions: null,
       journal: null,
-      stats: null
+      stats: null,
+      compound: null
     };
     this.navElement = null;
     this.navButtons = null;
@@ -24,6 +25,7 @@ class ViewManager {
     this.views.positions = document.getElementById('positionsView');
     this.views.journal = document.getElementById('journalView');
     this.views.stats = document.getElementById('statsView');
+    this.views.compound = document.getElementById('compoundView');
     this.navElement = document.getElementById('viewNav');
     this.navButtons = document.querySelectorAll('.view-nav__btn');
 
@@ -84,7 +86,7 @@ class ViewManager {
     // Keyboard shortcuts: Cmd/Ctrl + 1-4 for direct navigation
     document.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey) {
-        const viewMap = { '1': 'dashboard', '2': 'positions', '3': 'journal', '4': 'stats' };
+        const viewMap = { '1': 'dashboard', '2': 'positions', '3': 'journal', '4': 'stats', '5': 'compound' };
         if (viewMap[e.key]) {
           e.preventDefault();
           this.switchTo(viewMap[e.key]);
@@ -172,7 +174,7 @@ class ViewManager {
 
   toggle() {
     // Cycle through views: dashboard → positions → journal → stats → dashboard
-    const viewOrder = ['dashboard', 'positions', 'journal', 'stats'];
+    const viewOrder = ['dashboard', 'positions', 'journal', 'stats', 'compound'];
     const currentIndex = viewOrder.indexOf(this.currentView);
     const nextIndex = (currentIndex + 1) % viewOrder.length;
     this.switchTo(viewOrder[nextIndex]);
@@ -192,6 +194,10 @@ class ViewManager {
 
   isJournalView() {
     return this.currentView === 'journal';
+  }
+
+  isCompoundView() {
+    return this.currentView === 'compound';
   }
 
   // Navigate to a specific view (for use by other modules)
