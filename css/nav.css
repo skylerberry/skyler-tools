@@ -160,7 +160,7 @@
     border-bottom: 2px solid var(--text-muted);
     transform: rotate(45deg);
     transition: transform 0.2s ease;
-    margin-right: var(--space-2);
+    margin: 0 var(--space-2);
   }
 
   /* Chevron flips when nav is expanded */
