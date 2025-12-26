@@ -293,9 +293,36 @@ class FocusManager {
   }
 }
 
+/**
+ * Tooltip Handler - Prevent tooltips from triggering parent label clicks on mobile
+ */
+class TooltipHandler {
+  init() {
+    // Use event delegation for all tooltips
+    document.addEventListener('click', (e) => {
+      const tooltip = e.target.closest('.tooltip');
+      if (tooltip) {
+        // Stop propagation so label doesn't focus the input
+        e.stopPropagation();
+        // Prevent default to avoid any label behavior
+        e.preventDefault();
+      }
+    }, true); // Use capture phase to intercept early
+
+    // Also handle touchstart for mobile
+    document.addEventListener('touchstart', (e) => {
+      const tooltip = e.target.closest('.tooltip');
+      if (tooltip) {
+        e.stopPropagation();
+      }
+    }, true);
+  }
+}
+
 // Export instances
 export const theme = new ThemeManager();
 export const keyboard = new KeyboardManager();
 export const settingsToggle = new SettingsToggle();
 export const focusManager = new FocusManager();
 export const hintArrow = new HintArrowHandler();
+export const tooltipHandler = new TooltipHandler();

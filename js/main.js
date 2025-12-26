@@ -7,7 +7,7 @@ import { calculator } from './calculator.js';
 import { parser } from './parser.js';
 import { journal } from './journal.js';
 import { settings } from './settings.js';
-import { theme, keyboard, settingsToggle, focusManager, hintArrow } from './ui.js';
+import { theme, keyboard, settingsToggle, focusManager, hintArrow, tooltipHandler } from './ui.js';
 import { trimModal } from './trimModal.js';
 import { wizard } from './wizard.js';
 import { confetti } from './confetti.js';
@@ -89,6 +89,9 @@ class App {
 
     // Initialize hint arrow click handler (mobile scroll to input)
     hintArrow.init();
+
+    // Initialize tooltip handler (prevent label clicks on mobile)
+    tooltipHandler.init();
 
     // Sync Quick Settings summary with loaded values
     settingsToggle.updateSummary(

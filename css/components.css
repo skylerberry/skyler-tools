@@ -2992,8 +2992,11 @@
   border-radius: 50%;
   cursor: help;
   transition: all var(--transition-fast);
-  /* Larger touch target for mobile */
+  /* Touch handling */
   position: relative;
+  z-index: 5;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Expanded touch target - 44px minimum for iOS */
@@ -3006,6 +3009,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
+  /* Block touches to elements behind */
+  z-index: -1;
 }
 
 .tooltip:hover .tooltip__icon,
