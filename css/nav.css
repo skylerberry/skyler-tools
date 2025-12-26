@@ -115,10 +115,10 @@
 /* Mobile: Dropdown overlay nav */
 @media (max-width: 800px) {
   .view-nav {
-    /* Position in header, right side */
-    position: static;
-    transform: none;
-    margin-left: auto;
+    /* Keep centered like desktop */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     gap: 0;
     padding: var(--space-1);
     overflow: visible;
@@ -155,32 +155,62 @@
   }
 
   /* === Expanded state - dropdown overlay === */
+
+  /* Nav stays in header, but gets a dropdown backdrop */
   .view-nav--expanded {
-    /* Break out of header flow */
+    /* Stay centered in header */
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  /* Dropdown backdrop via pseudo-element */
+  .view-nav--expanded::before {
+    content: '';
     position: fixed;
     top: var(--header-height);
     left: 0;
     right: 0;
-    z-index: var(--z-modal);
-
-    /* Full-width dropdown */
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-1);
-    padding: var(--space-3);
-    margin: 0;
-
-    /* Styling */
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--border-subtle);
-    border-radius: 0;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-
-    /* Animation */
-    animation: navDropdown 0.2s ease-out;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: -1;
+    animation: navBackdrop 0.2s ease-out;
   }
 
-  @keyframes navDropdown {
+  @keyframes navBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Chevron flips up when expanded */
+  .view-nav--expanded::after {
+    transform: rotate(-135deg);
+    margin-bottom: 2px;
+  }
+
+  /* Buttons become dropdown items */
+  .view-nav--expanded .view-nav__btn {
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: 0;
+    justify-content: flex-start;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    z-index: var(--z-modal);
+    animation: navItemSlide 0.2s ease-out backwards;
+  }
+
+  /* Stack buttons vertically below header */
+  .view-nav--expanded .view-nav__btn:nth-child(1) { top: var(--header-height); animation-delay: 0ms; }
+  .view-nav--expanded .view-nav__btn:nth-child(2) { top: calc(var(--header-height) + 48px); animation-delay: 20ms; }
+  .view-nav--expanded .view-nav__btn:nth-child(3) { top: calc(var(--header-height) + 96px); animation-delay: 40ms; }
+  .view-nav--expanded .view-nav__btn:nth-child(4) { top: calc(var(--header-height) + 144px); animation-delay: 60ms; }
+  .view-nav--expanded .view-nav__btn:nth-child(5) { top: calc(var(--header-height) + 192px); animation-delay: 80ms; }
+
+  @keyframes navItemSlide {
     from {
       opacity: 0;
       transform: translateY(-8px);
@@ -189,13 +219,6 @@
       opacity: 1;
       transform: translateY(0);
     }
-  }
-
-  .view-nav--expanded .view-nav__btn {
-    width: 100%;
-    padding: var(--space-3) var(--space-4);
-    border-radius: var(--border-radius);
-    justify-content: flex-start;
   }
 
   .view-nav--expanded .view-nav__btn:hover {
@@ -214,10 +237,6 @@
   .view-nav--expanded .view-nav__icon {
     width: 20px;
     height: 20px;
-  }
-
-  /* Hide chevron when expanded */
-  .view-nav--expanded::after {
-    display: none;
+    opacity: 1;
   }
 }
