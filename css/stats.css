@@ -351,10 +351,6 @@
 }
 
 @media (max-width: 500px) {
-  .stats-header__title {
-    font-size: var(--text-xl);
-  }
-
   .stat-card__value {
     font-size: var(--text-xl);
   }
