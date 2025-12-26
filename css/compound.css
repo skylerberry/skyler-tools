@@ -482,6 +482,7 @@
 
 /* $100K+ values - white/bright */
 .compound-cell--white {
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
   color: var(--text-primary);
   font-weight: var(--font-semibold);
 }
