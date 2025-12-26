@@ -363,6 +363,7 @@
 .compound-cell--year {
   text-align: center;
   color: var(--text-primary);
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
   font-weight: var(--font-medium);
   position: sticky;
   left: 0;
