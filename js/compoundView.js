@@ -271,7 +271,7 @@ class CompoundView {
     let html = '';
     for (let year = 1; year <= this.years; year++) {
       html += `<tr class="compound-row stagger-${year}">`;
-      html += `<td class="compound-cell compound-cell--year">Year ${year}</td>`;
+      html += `<td class="compound-cell compound-cell--year">${year}</td>`;
 
       this.returnRates.forEach(rate => {
         const value = this.calculateCompoundValue(this.startingCapital, rate, year);
