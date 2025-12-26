@@ -218,3 +218,174 @@ dd388a7 Refine compound table styling
 - Headers: `var(--font-mono)`, `var(--font-semibold)`
 - Values: `var(--font-mono)`, `var(--font-bold)`
 - Year column: `var(--text-primary)` with white glow
+
+---
+
+## Session Continued - December 25, 2024 (Evening)
+
+### Overview
+This continuation focused on reimagining the Contributions feature, redesigning the Compound page layout with a sidebar, and adding a header to the main Dashboard for consistency.
+
+---
+
+## Contributions Feature Redesign
+
+### Replaced Old Contributions UI
+**Commit:** `c41455e`
+
+**Old Design (Removed):**
+- Recurring: Amount + frequency dropdown + confusing +/− toggle
+- One-time: Dynamic rows with year selector, amount, +/− toggle, remove button
+- Layout: Horizontal next to Starting Capital, cramped and form-heavy
+
+**New Design:**
+- 3-way toggle: `Deposits | Withdrawals | Both`
+- Contextual fields appear based on selection
+- Clean deposit/withdrawal sections with amount + frequency dropdown
+- Click same toggle again to deselect and hide fields
+
+**Features:**
+- K/M notation auto-expansion on contribution inputs
+- Frequency options: Monthly, Quarterly, Yearly
+- Table and milestone cards update in real-time
+- Contributions compound properly (added after each year's growth)
+
+**Files Modified:**
+- `index.html` - Replaced contributions HTML block
+- `css/compound.css` - Removed old styles, added new toggle styles
+- `js/compoundView.js` - New toggle logic, simplified data model
+
+---
+
+## Compound Page Layout Redesign
+
+### 2-Column Sidebar Layout
+**Commit:** `c41455e`
+
+**Old Layout:**
+- Controls spread horizontally with empty space between
+- Stat cards buried at bottom with huge gap
+- Disconnected, didn't feel cohesive
+
+**New Layout:**
+```
+┌──────────────────┬─────────────────────────────────────────────┐
+│  LEFT SIDEBAR    │  MAIN CONTENT                               │
+│  ┌────────────┐  │                                              │
+│  │ Starting   │  │  ┌────────────────────────────────────────┐  │
+│  │ Capital    │  │  │              TABLE                     │  │
+│  │ [presets]  │  │  │           (unchanged)                  │  │
+│  └────────────┘  │  └────────────────────────────────────────┘  │
+│  ┌────────────┐  │                                              │
+│  │Contributions│ │  ┌──────────┬──────────┬──────────┬───────┐  │
+│  │ [toggles]  │  │  │ 5yr@50%  │10yr@50%  │10yr@100% │ Best  │  │
+│  │ [fields]   │  │  │ +$75.9K  │+$576.7K  │ +$10.2M  │+$590M │  │
+│  └────────────┘  │  └──────────┴──────────┴──────────┴───────┘  │
+└──────────────────┴─────────────────────────────────────────────┘
+```
+
+**Details:**
+- Sidebar: Fixed 280px width with two stacked cards
+- Starting Capital card: Input + 3x2 grid of presets
+- Contributions card: Toggle + contextual fields
+- Main content: Table + stat cards directly below (no gap)
+- Responsive: Cards go side-by-side at 1024px, stack at 768px
+
+**CSS Changes:**
+- Added `.compound-layout` (flex container)
+- Added `.compound-sidebar` (fixed width, stacked cards)
+- Added `.compound-main` (flex: 1, table + stats)
+- Added `.compound-card` (card styling with headers)
+- Staggered entrance animations
+
+---
+
+## Dashboard Header
+
+### Added TradeDeck Dashboard Header
+**Commit:** `78493d9`
+
+**Changes:**
+- Added header to main dashboard for consistency with other pages
+- Icon: 🎯
+- Title: "TradeDeck Dashboard"
+- Subtitle: "Calculate position sizes, manage risk, and log trades"
+- Header spans all 3 columns in grid layout
+- Staggered entrance animation (header first, then panels cascade)
+
+**Files Modified:**
+- `index.html` - Added `.dashboard-header` element
+- `css/layout.css` - Added dashboard header styles, updated grid
+- `css/animations.css` - Added header animation, adjusted panel delays
+
+---
+
+## New Commits This Session
+
+```
+78493d9 Add TradeDeck Dashboard header for consistency
+c41455e Redesign Compound page with sidebar layout + new contributions UI
+```
+
+---
+
+## Files Modified This Session (Evening)
+
+### HTML
+- `index.html`
+  - Restructured compound view to 2-column layout
+  - Replaced contributions UI with 3-way toggle design
+  - Added dashboard header
+
+### CSS
+- `css/compound.css`
+  - Complete rewrite for sidebar layout
+  - New `.compound-layout`, `.compound-sidebar`, `.compound-main`
+  - New `.compound-card` styling
+  - Simplified contribution styles
+
+- `css/layout.css`
+  - Added `.dashboard-header` styles
+  - Updated `.main` grid for header row
+
+- `css/animations.css`
+  - Added dashboard header animation
+  - Adjusted panel animation delays
+
+### JavaScript
+- `js/compoundView.js`
+  - New contribution mode: `null | 'deposits' | 'withdrawals' | 'both'`
+  - Separate `deposits` and `withdrawals` objects
+  - New `handleModeToggle()` and `updateModeUI()` methods
+  - Removed one-time contributions logic
+
+---
+
+## Branding & Polish
+
+### Rebrand from TradeDeck to skyler.tools
+**Changes:**
+- Removed all "TradeDeck" references
+- Header: `skyler.tools | Simple suite of tools for traders`
+- Page title: `skyler.tools | Smart position sizing for all traders`
+- Footer tagline: `Smart position sizing for safer trading`
+- Footer subtext: `Never risk too much on a single trade`
+
+### Dashboard Header Update
+- Title: `Dashboard` (removed "TradeDeck")
+- Subtitle: `Calculate position sizes, manage risk, and log trades`
+
+### Compound Page Info Card
+- Added strategy tip card below Contributions in sidebar
+- Message: "The key to compounding: cut losses quickly, let winners run, and stay consistent. 50% annually turns $10K → $576K in 10 years."
+- Subtle styling with `bg-elevated` background
+
+---
+
+## Final Commits This Session
+
+```
+78493d9 Add TradeDeck Dashboard header for consistency
+c41455e Redesign Compound page with sidebar layout + new contributions UI
+[pending] Rebrand to skyler.tools + info card + polish
+```
