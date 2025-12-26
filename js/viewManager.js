@@ -17,6 +17,8 @@ class ViewManager {
     this.navElement = null;
     this.navButtons = null;
     this.mobileBreakpoint = 800;
+    this.mobileNavBackdrop = null;
+    this.resizeTimeout = null;
   }
 
   init() {
@@ -29,6 +31,7 @@ class ViewManager {
     this.navElement = document.getElementById('viewNav');
     this.navButtons = document.querySelectorAll('.view-nav__btn');
     this.mobileNavTrigger = document.getElementById('mobileNavTrigger');
+    this.mobileNavBackdrop = document.getElementById('mobileNavBackdrop');
 
     if (!this.views.dashboard) {
       console.warn('ViewManager: Dashboard element not found');
@@ -80,13 +83,39 @@ class ViewManager {
       });
     });
 
-    // Close expanded nav when clicking outside
+    // Close expanded nav when clicking outside or on backdrop
+    if (this.mobileNavBackdrop) {
+      this.mobileNavBackdrop.addEventListener('click', () => {
+        if (this.isNavExpanded()) {
+          this.collapseNav();
+        }
+      });
+    }
+
     document.addEventListener('click', (e) => {
       if (this.isMobile() && this.isNavExpanded()) {
-        if (!this.navElement.contains(e.target) && !this.mobileNavTrigger?.contains(e.target)) {
+        // Close if clicking outside nav and trigger (but not on backdrop, which has its own handler)
+        if (!this.navElement.contains(e.target) && 
+            !this.mobileNavTrigger?.contains(e.target) &&
+            !this.mobileNavBackdrop?.contains(e.target)) {
           this.collapseNav();
         }
       }
+    });
+
+    // Handle window resize - collapse nav if switching from mobile to desktop
+    window.addEventListener('resize', () => {
+      // Debounce resize events
+      if (this.resizeTimeout) {
+        clearTimeout(this.resizeTimeout);
+      }
+      this.resizeTimeout = setTimeout(() => {
+        if (!this.isMobile() && this.isNavExpanded()) {
+          this.collapseNav();
+        }
+        // Update mobile trigger icon on resize
+        this.updateMobileTriggerIcon();
+      }, 150);
     });
 
     // Handle URL hash on load
@@ -115,13 +144,20 @@ class ViewManager {
   }
 
   expandNav() {
+    if (!this.isMobile()) return;
     this.navElement?.classList.add('view-nav--expanded');
     this.mobileNavTrigger?.classList.add('mobile-nav-trigger--active');
+    this.mobileNavBackdrop?.classList.add('mobile-nav-backdrop--active');
+    // Prevent body scroll when nav is open
+    document.body.style.overflow = 'hidden';
   }
 
   collapseNav() {
     this.navElement?.classList.remove('view-nav--expanded');
     this.mobileNavTrigger?.classList.remove('mobile-nav-trigger--active');
+    this.mobileNavBackdrop?.classList.remove('mobile-nav-backdrop--active');
+    // Restore body scroll
+    document.body.style.overflow = '';
   }
 
   updateMobileTriggerIcon() {
