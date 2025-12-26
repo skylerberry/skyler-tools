@@ -426,14 +426,10 @@
     z-index: 3;
   }
 
-  /* Mobile header */
-  .header__divider {
-    margin: 0 var(--space-1);
-    height: 16px;
-  }
-
+  /* Mobile header - hide tagline to save space */
+  .header__divider,
   .header__tool-name {
-    font-size: var(--text-xs);
+    display: none;
   }
 
   /* Push actions to right when account is hidden */

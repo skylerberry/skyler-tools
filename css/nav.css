@@ -112,30 +112,21 @@
   }
 }
 
-/* Mobile: Collapsible nav (shows only active view, expands on tap) */
+/* Mobile: Dropdown overlay nav */
 @media (max-width: 800px) {
   .view-nav {
     /* Position in header, right side */
     position: static;
     transform: none;
     margin-left: auto;
-
-    /* Collapsed: hide overflow */
-    overflow: hidden;
-    transition: all 0.25s ease-out;
-  }
-
-  /* Collapsed state - only show active button */
-  .view-nav:not(.view-nav--expanded) {
     gap: 0;
     padding: var(--space-1);
+    overflow: visible;
   }
 
+  /* === Collapsed state - only show active button === */
   .view-nav:not(.view-nav--expanded) .view-nav__btn:not(.view-nav__btn--active) {
-    width: 0;
-    padding: 0;
-    opacity: 0;
-    pointer-events: none;
+    display: none;
   }
 
   .view-nav:not(.view-nav--expanded) .view-nav__btn--active {
@@ -146,31 +137,87 @@
     display: none;
   }
 
-  /* Expanded state - show all buttons */
+  .view-nav:not(.view-nav--expanded) .view-nav__btn--active .view-nav__icon {
+    color: var(--primary);
+  }
+
+  /* Chevron indicator for collapsed state */
+  .view-nav:not(.view-nav--expanded)::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg);
+    margin-left: var(--space-1);
+    margin-right: var(--space-2);
+    opacity: 0.6;
+  }
+
+  /* === Expanded state - dropdown overlay === */
   .view-nav--expanded {
+    /* Break out of header flow */
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    right: 0;
+    z-index: var(--z-modal);
+
+    /* Full-width dropdown */
+    flex-direction: column;
+    align-items: stretch;
     gap: var(--space-1);
-    padding: var(--space-1);
+    padding: var(--space-3);
+    margin: 0;
+
+    /* Styling */
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    border-radius: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    /* Animation */
+    animation: navDropdown 0.2s ease-out;
+  }
+
+  @keyframes navDropdown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .view-nav--expanded .view-nav__btn {
-    padding: var(--space-2) var(--space-3);
-    opacity: 1;
-    width: auto;
-    pointer-events: auto;
-    transition: all 0.2s ease-out;
+    width: 100%;
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--border-radius);
+    justify-content: flex-start;
+  }
+
+  .view-nav--expanded .view-nav__btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .view-nav--expanded .view-nav__btn--active {
+    background: var(--bg-elevated);
   }
 
   .view-nav--expanded .view-nav__text {
     display: block;
+    font-size: var(--text-base);
   }
 
-  /* Button animations */
-  .view-nav__btn {
-    transition: all 0.2s ease-out;
+  .view-nav--expanded .view-nav__icon {
+    width: 20px;
+    height: 20px;
   }
 
-  /* Active button in collapsed state gets a subtle indicator */
-  .view-nav:not(.view-nav--expanded) .view-nav__btn--active .view-nav__icon {
-    color: var(--primary);
+  /* Hide chevron when expanded */
+  .view-nav--expanded::after {
+    display: none;
   }
 }
