@@ -253,10 +253,18 @@
 
   .view-nav--expanded .view-nav__btn--active {
     color: var(--text-primary);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .view-nav--expanded .view-nav__btn--active:hover {
+    background: var(--bg-elevated);
   }
 
   .view-nav--expanded .view-nav__btn--active .view-nav__icon {
     color: var(--primary);
+    opacity: 1;
   }
 
   .view-nav--expanded .view-nav__text {
