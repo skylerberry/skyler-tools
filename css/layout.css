@@ -104,12 +104,46 @@
 .main {
   display: grid;
   grid-template-columns: minmax(320px, 380px) 1fr minmax(300px, 360px);
+  grid-template-rows: auto 1fr;
   gap: var(--panel-gap);
   flex: 1;
   padding: var(--panel-gap);
   max-width: 1800px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* === Dashboard Header === */
+
+.dashboard-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+}
+
+.dashboard-header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dashboard-header__icon {
+  font-size: var(--text-2xl);
+}
+
+.dashboard-header__title {
+  color: var(--text-primary);
+  font-weight: var(--font-bold);
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  margin: 0;
+}
+
+.dashboard-header__subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
 /* === Panels === */
