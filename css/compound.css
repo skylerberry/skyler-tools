@@ -487,3 +487,24 @@
   color: var(--text-primary);
   font-weight: var(--font-semibold);
 }
+
+/* === Summary Stats === */
+
+.compound-summary {
+  margin-top: var(--space-6);
+}
+
+/* Add glows to match table values */
+.compound-summary .stat-card--success .stat-card__value {
+  text-shadow: 0 0 8px var(--success-glow);
+}
+
+.compound-summary .stat-card--warning .stat-card__value {
+  text-shadow: 0 0 10px var(--warning-glow);
+}
+
+/* Entrance animation */
+.view--compound.view--active .compound-summary {
+  animation: fadeInUp 0.4s ease-out backwards;
+  animation-delay: 200ms;
+}

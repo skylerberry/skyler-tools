@@ -34,7 +34,8 @@ class CompoundView {
       recurringFrequency: document.getElementById('recurringFrequency'),
       recurringToggle: document.querySelectorAll('.contribution-toggle .toggle-btn'),
       oneTimeRows: document.getElementById('oneTimeRows'),
-      addOneTimeRowBtn: document.getElementById('addOneTimeRowBtn')
+      addOneTimeRowBtn: document.getElementById('addOneTimeRowBtn'),
+      summaryContainer: document.getElementById('compoundSummary')
     };
   }
 
@@ -254,6 +255,7 @@ class CompoundView {
   render() {
     this.renderHeader();
     this.renderBody();
+    this.renderSummary();
   }
 
   renderHeader() {
@@ -285,6 +287,40 @@ class CompoundView {
       html += '</tr>';
     }
     this.elements.tableBody.innerHTML = html;
+  }
+
+  formatMultiplier(value) {
+    const multiplier = Math.round(value / this.startingCapital);
+    if (multiplier >= 1000000) return `${(multiplier / 1000000).toFixed(1)}M× growth`;
+    if (multiplier >= 1000) return `${(multiplier / 1000).toFixed(0)}K× growth`;
+    return `${multiplier.toLocaleString()}× growth`;
+  }
+
+  renderSummary() {
+    if (!this.elements.summaryContainer) return;
+
+    const milestones = [
+      { label: '5 Years @ 50%', rate: 50, years: 5, variant: 'success' },
+      { label: '10 Years @ 50%', rate: 50, years: 10, variant: 'success' },
+      { label: '10 Years @ 100%', rate: 100, years: 10, variant: 'success' },
+      { label: 'Best Case (10yr @ 200%)', rate: 200, years: 10, variant: 'warning' }
+    ];
+
+    const html = milestones.map(m => {
+      const value = this.calculateCompoundValue(this.startingCapital, m.rate, m.years);
+      const formatted = this.formatCompact(value);
+      const multiplier = this.formatMultiplier(value);
+
+      return `
+        <div class="stat-card stat-card--${m.variant}">
+          <span class="stat-card__label">${m.label}</span>
+          <span class="stat-card__value">${formatted}</span>
+          <span class="stat-card__sub">${multiplier}</span>
+        </div>
+      `;
+    }).join('');
+
+    this.elements.summaryContainer.innerHTML = html;
   }
 }
 
