@@ -2,7 +2,7 @@
  * CompoundView - Compound growth visualization table
  */
 
-import { parseNumber } from './utils.js';
+import { parseNumber, formatWithCommas } from './utils.js';
 import { state } from './state.js';
 
 class CompoundView {
@@ -109,9 +109,16 @@ class CompoundView {
   }
 
   handleInputChange() {
-    const value = parseNumber(this.elements.input?.value);
+    const inputValue = this.elements.input?.value || '';
+    const value = parseNumber(inputValue);
     if (value && value > 0) {
       this.startingCapital = value;
+      
+      // Auto-expand K/M notation (e.g., "50k" -> "50,000")
+      if (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m')) {
+        this.elements.input.value = formatWithCommas(value);
+      }
+      
       this.updatePresetStates();
       this.render();
     }
