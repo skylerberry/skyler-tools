@@ -193,6 +193,9 @@
     padding: var(--space-2);
     margin: 0;
 
+    /* Prevent overflow */
+    max-width: calc(100vw - var(--space-6));
+
     /* Contained pill style - matches desktop */
     background: var(--bg-elevated);
     border-radius: var(--border-radius-xl);
@@ -246,10 +249,10 @@
     flex-direction: column;
     align-items: center;
     gap: var(--space-1);
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2);
     border-radius: var(--border-radius);
     background: transparent;
-    min-width: 56px;
+    min-width: 52px;
   }
 
   .view-nav--expanded .view-nav__btn:hover {
