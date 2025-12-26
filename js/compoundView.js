@@ -9,7 +9,7 @@ class CompoundView {
   constructor() {
     this.elements = {};
     this.startingCapital = 10000; // Will be updated from state in init()
-    this.returnRates = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200];
+    this.returnRates = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200, 250, 300];
     this.years = 10;
 
     // Simplified contribution model
@@ -324,7 +324,7 @@ class CompoundView {
       { label: '5 Years @ 50%', rate: 50, years: 5, variant: 'success' },
       { label: '10 Years @ 50%', rate: 50, years: 10, variant: 'success' },
       { label: '10 Years @ 100%', rate: 100, years: 10, variant: 'success' },
-      { label: 'Best Case (10yr @ 200%)', rate: 200, years: 10, variant: 'warning' }
+      { label: 'Best Case (10yr @ 300%)', rate: 300, years: 10, variant: 'warning' }
     ];
 
     const html = milestones.map(m => {

@@ -386,6 +386,14 @@
   color: #fb923c;
   text-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
 }
+.compound-th.growth-250 {
+  color: #f97316;
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.6);
+}
+.compound-th.growth-300 {
+  color: #ef4444;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+}
 
 /* === Summary Stats === */
 
