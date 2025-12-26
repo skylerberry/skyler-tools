@@ -895,82 +895,109 @@
         </div>
       </div>
 
-      <!-- Controls Row -->
-      <div class="compound-controls-row">
-        <!-- Starting Capital (left) -->
-        <div class="compound-controls">
-          <div class="input-group">
-            <label class="input-label">Starting Capital</label>
-            <div class="input-wrapper input-wrapper--prefix">
-              <span class="input-prefix">$</span>
-              <input type="text" id="compoundStartingCapital" class="input input--mono" placeholder="10000" value="10,000">
+      <!-- 2-Column Layout -->
+      <div class="compound-layout">
+        <!-- Left Sidebar -->
+        <aside class="compound-sidebar">
+          <!-- Starting Capital Card -->
+          <div class="card compound-card">
+            <div class="card__header">
+              <span class="card__icon">💰</span>
+              <h2 class="card__title">Starting Capital</h2>
+            </div>
+            <div class="card__body">
+              <div class="input-group">
+                <div class="input-wrapper input-wrapper--prefix">
+                  <span class="input-prefix">$</span>
+                  <input type="text" id="compoundStartingCapital" class="input input--mono" placeholder="10000" value="10,000">
+                </div>
+              </div>
+              <div class="preset-group">
+                <button class="preset-btn" data-capital="1000">$1K</button>
+                <button class="preset-btn" data-capital="5000">$5K</button>
+                <button class="preset-btn active" data-capital="10000">$10K</button>
+                <button class="preset-btn" data-capital="25000">$25K</button>
+                <button class="preset-btn" data-capital="50000">$50K</button>
+                <button class="preset-btn" data-capital="100000">$100K</button>
+              </div>
             </div>
           </div>
-          <div class="input-group">
-            <div class="preset-group">
-              <button class="preset-btn" data-capital="1000">$1K</button>
-              <button class="preset-btn" data-capital="5000">$5K</button>
-              <button class="preset-btn active" data-capital="10000">$10K</button>
-              <button class="preset-btn" data-capital="25000">$25K</button>
-              <button class="preset-btn" data-capital="50000">$50K</button>
-              <button class="preset-btn" data-capital="100000">$100K</button>
+
+          <!-- Contributions Card -->
+          <div class="card compound-card">
+            <div class="card__header">
+              <span class="card__icon">📥</span>
+              <h2 class="card__title">Contributions</h2>
+              <span class="label-optional">(optional)</span>
             </div>
+            <div class="card__body">
+              <!-- Mode Toggle -->
+              <div class="preset-group contribution-mode-toggle" id="contributionModeToggle">
+                <button type="button" class="preset-btn" data-mode="deposits">Deposits</button>
+                <button type="button" class="preset-btn" data-mode="withdrawals">Withdrawals</button>
+                <button type="button" class="preset-btn" data-mode="both">Both</button>
+              </div>
+
+              <!-- Contribution Fields Wrapper -->
+              <div class="contribution-fields-wrapper" id="contributionFieldsWrapper" style="display: none;">
+                <!-- Deposit Fields -->
+                <div class="contribution-fields contribution-fields--deposit" id="depositFields">
+                  <label class="input-label input-label--sm">Deposit amount</label>
+                  <div class="contribution-input-row">
+                    <div class="input-wrapper input-wrapper--prefix">
+                      <span class="input-prefix">$</span>
+                      <input type="text" id="depositAmount" class="input input--mono" placeholder="0">
+                    </div>
+                    <select id="depositFrequency" class="input input--select">
+                      <option value="monthly" selected>Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Withdrawal Fields -->
+                <div class="contribution-fields contribution-fields--withdrawal" id="withdrawalFields">
+                  <label class="input-label input-label--sm">Withdrawal amount</label>
+                  <div class="contribution-input-row">
+                    <div class="input-wrapper input-wrapper--prefix">
+                      <span class="input-prefix">$</span>
+                      <input type="text" id="withdrawalAmount" class="input input--mono" placeholder="0">
+                    </div>
+                    <select id="withdrawalFrequency" class="input input--select">
+                      <option value="monthly" selected>Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="compound-main">
+          <!-- Table -->
+          <div class="compound-table-container">
+            <table class="compound-table" id="compoundTable">
+              <thead>
+                <tr>
+                  <th class="compound-th compound-th--year">Year</th>
+                  <!-- JS will populate: 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%, 150%, 200% -->
+                </tr>
+              </thead>
+              <tbody id="compoundTableBody">
+                <!-- JS will populate rows for Years 1-10 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Summary Stats -->
+          <div class="compound-summary stats-grid" id="compoundSummary">
+            <!-- 4 stat cards rendered by JS -->
           </div>
         </div>
-
-        <!-- Contributions (right) -->
-        <div class="compound-contributions">
-          <div class="input-group">
-            <label class="input-label">💰 Contributions</label>
-
-            <!-- Recurring -->
-            <div class="contribution-row">
-              <span class="contribution-label">Recurring</span>
-              <div class="input-wrapper input-wrapper--prefix contribution-input">
-                <span class="input-prefix">$</span>
-                <input type="text" id="recurringAmount" class="input input--mono" value="0" placeholder="0">
-              </div>
-              <select id="recurringFrequency" class="input input--select">
-                <option value="weekly">Weekly</option>
-                <option value="monthly" selected>Monthly</option>
-                <option value="yearly">Yearly</option>
-              </select>
-              <div class="contribution-toggle">
-                <button type="button" class="toggle-btn active" data-type="deposit">+</button>
-                <button type="button" class="toggle-btn" data-type="withdrawal">−</button>
-              </div>
-            </div>
-
-            <!-- One-time contributions (simple rows) -->
-            <div class="onetime-section">
-              <span class="contribution-label">One-time</span>
-              <div class="onetime-rows" id="oneTimeRows">
-                <!-- JS will populate rows dynamically -->
-              </div>
-              <button type="button" class="onetime-add-btn" id="addOneTimeRowBtn">+ Add</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Table -->
-      <div class="compound-table-container">
-        <table class="compound-table" id="compoundTable">
-          <thead>
-            <tr>
-              <th class="compound-th compound-th--year">Year</th>
-              <!-- JS will populate: 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%, 150%, 200% -->
-            </tr>
-          </thead>
-          <tbody id="compoundTableBody">
-            <!-- JS will populate rows for Years 1-10 -->
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Summary Stats -->
-      <div class="compound-summary stats-grid" id="compoundSummary">
-        <!-- 4 stat cards rendered by JS -->
       </div>
     </section>
   </div>

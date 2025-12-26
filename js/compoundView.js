@@ -11,27 +11,28 @@ class CompoundView {
     this.startingCapital = 10000; // Will be updated from state in init()
     this.returnRates = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200];
     this.years = 10;
-    this.contributions = {
-      recurring: { amount: 0, frequency: 'monthly', type: 'deposit' },
-      oneTime: []
-    };
+
+    // Simplified contribution model
+    this.contributionMode = null; // null, 'deposits', 'withdrawals', 'both'
+    this.deposits = { amount: 0, frequency: 'monthly' };
+    this.withdrawals = { amount: 0, frequency: 'monthly' };
   }
 
   init() {
     this.cacheElements();
     this.bindEvents();
-    
+
     // Set starting capital from user's account size
     this.startingCapital = state.account.currentSize || 10000;
     if (this.elements.input) {
       this.elements.input.value = this.startingCapital.toLocaleString();
     }
     this.updatePresetStates();
-    
+
     // Listen for account size changes
     state.on('accountSizeChanged', (size) => {
       // Only update if user hasn't manually changed the value
-      if (this.startingCapital === state.account.currentSize || 
+      if (this.startingCapital === state.account.currentSize ||
           this.startingCapital === 10000) {
         this.startingCapital = size;
         if (this.elements.input) {
@@ -41,7 +42,7 @@ class CompoundView {
         this.render();
       }
     });
-    
+
     this.render();
   }
 
@@ -52,13 +53,17 @@ class CompoundView {
       presets: document.querySelectorAll('#compoundView .preset-group .preset-btn[data-capital]'),
       tableHead: document.querySelector('#compoundTable thead tr'),
       tableBody: document.getElementById('compoundTableBody'),
+      summaryContainer: document.getElementById('compoundSummary'),
       // Contribution elements
-      recurringAmount: document.getElementById('recurringAmount'),
-      recurringFrequency: document.getElementById('recurringFrequency'),
-      recurringToggle: document.querySelectorAll('.contribution-toggle .toggle-btn'),
-      oneTimeRows: document.getElementById('oneTimeRows'),
-      addOneTimeRowBtn: document.getElementById('addOneTimeRowBtn'),
-      summaryContainer: document.getElementById('compoundSummary')
+      modeToggle: document.getElementById('contributionModeToggle'),
+      modeButtons: document.querySelectorAll('#contributionModeToggle .preset-btn'),
+      fieldsWrapper: document.getElementById('contributionFieldsWrapper'),
+      depositFields: document.getElementById('depositFields'),
+      withdrawalFields: document.getElementById('withdrawalFields'),
+      depositAmount: document.getElementById('depositAmount'),
+      depositFrequency: document.getElementById('depositFrequency'),
+      withdrawalAmount: document.getElementById('withdrawalAmount'),
+      withdrawalFrequency: document.getElementById('withdrawalFrequency')
     };
   }
 
@@ -72,40 +77,20 @@ class CompoundView {
       btn.addEventListener('click', (e) => this.handlePresetClick(e));
     });
 
-    // Contribution events
-    this.bindContributionEvents();
-  }
-
-  bindContributionEvents() {
-    // Recurring amount change
-    this.elements.recurringAmount?.addEventListener('input', () => {
-      this.contributions.recurring.amount = parseNumber(this.elements.recurringAmount.value) || 0;
-      this.render();
+    // Contribution mode toggle
+    this.elements.modeButtons?.forEach(btn => {
+      btn.addEventListener('click', () => this.handleModeToggle(btn.dataset.mode));
     });
 
-    this.elements.recurringAmount?.addEventListener('blur', () => {
-      this.contributions.recurring.amount = parseNumber(this.elements.recurringAmount.value) || 0;
-      this.render();
-    });
+    // Deposit inputs
+    this.elements.depositAmount?.addEventListener('input', () => this.handleDepositChange());
+    this.elements.depositAmount?.addEventListener('blur', () => this.handleDepositChange());
+    this.elements.depositFrequency?.addEventListener('change', () => this.handleDepositChange());
 
-    // Recurring frequency change
-    this.elements.recurringFrequency?.addEventListener('change', (e) => {
-      this.contributions.recurring.frequency = e.target.value;
-      this.render();
-    });
-
-    // Deposit/Withdrawal toggle
-    this.elements.recurringToggle?.forEach(btn => {
-      btn.addEventListener('click', () => {
-        this.elements.recurringToggle.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        this.contributions.recurring.type = btn.dataset.type;
-        this.render();
-      });
-    });
-
-    // Add one-time row button
-    this.elements.addOneTimeRowBtn?.addEventListener('click', () => this.addOneTimeRow());
+    // Withdrawal inputs
+    this.elements.withdrawalAmount?.addEventListener('input', () => this.handleWithdrawalChange());
+    this.elements.withdrawalAmount?.addEventListener('blur', () => this.handleWithdrawalChange());
+    this.elements.withdrawalFrequency?.addEventListener('change', () => this.handleWithdrawalChange());
   }
 
   handleInputChange() {
@@ -113,12 +98,12 @@ class CompoundView {
     const value = parseNumber(inputValue);
     if (value && value > 0) {
       this.startingCapital = value;
-      
+
       // Auto-expand K/M notation (e.g., "50k" -> "50,000")
       if (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m')) {
         this.elements.input.value = formatWithCommas(value);
       }
-      
+
       this.updatePresetStates();
       this.render();
     }
@@ -142,109 +127,92 @@ class CompoundView {
     });
   }
 
-  // One-time row methods
-  addOneTimeRow(year = 1, amount = 0, type = 'deposit') {
-    const index = this.contributions.oneTime.length;
-    this.contributions.oneTime.push({ year, amount, type });
-    this.renderOneTimeRows();
+  handleModeToggle(mode) {
+    // Toggle off if clicking the same mode
+    if (this.contributionMode === mode) {
+      this.contributionMode = null;
+    } else {
+      this.contributionMode = mode;
+    }
 
-    // Focus the new amount input
-    const newRow = this.elements.oneTimeRows?.querySelector(`[data-index="${index}"] .onetime-row__amount input`);
-    newRow?.focus();
-  }
-
-  removeOneTimeRow(index) {
-    this.contributions.oneTime.splice(index, 1);
-    this.renderOneTimeRows();
+    this.updateModeUI();
     this.render();
   }
 
-  updateOneTimeRow(index, field, value) {
-    if (!this.contributions.oneTime[index]) return;
-
-    if (field === 'year') {
-      this.contributions.oneTime[index].year = parseInt(value);
-    } else if (field === 'amount') {
-      this.contributions.oneTime[index].amount = parseNumber(value) || 0;
-    } else if (field === 'type') {
-      this.contributions.oneTime[index].type = value;
-    }
-
-    // Update row styling for deposit/withdrawal
-    if (field === 'type') {
-      this.renderOneTimeRows();
-    }
-
-    this.render();
-  }
-
-  renderOneTimeRows() {
-    if (!this.elements.oneTimeRows) return;
-
-    if (this.contributions.oneTime.length === 0) {
-      this.elements.oneTimeRows.innerHTML = '';
-      return;
-    }
-
-    const yearOptions = Array.from({ length: 10 }, (_, i) => i + 1)
-      .map(y => `<option value="${y}">Year ${y}</option>`)
-      .join('');
-
-    this.elements.oneTimeRows.innerHTML = this.contributions.oneTime
-      .map((c, i) => `
-        <div class="onetime-row onetime-row--${c.type}" data-index="${i}">
-          <select class="input input--select onetime-row__year" data-field="year">
-            ${yearOptions.replace(`value="${c.year}"`, `value="${c.year}" selected`)}
-          </select>
-          <div class="input-wrapper input-wrapper--prefix onetime-row__amount">
-            <span class="input-prefix">$</span>
-            <input type="text" class="input input--mono" value="${c.amount || ''}" placeholder="0" data-field="amount">
-          </div>
-          <div class="onetime-row__toggle">
-            <button type="button" class="toggle-btn ${c.type === 'deposit' ? 'active' : ''}" data-type="deposit">+</button>
-            <button type="button" class="toggle-btn ${c.type === 'withdrawal' ? 'active' : ''}" data-type="withdrawal">−</button>
-          </div>
-          <button type="button" class="onetime-row__remove" data-action="remove">×</button>
-        </div>
-      `).join('');
-
-    // Bind events to all rows
-    this.elements.oneTimeRows.querySelectorAll('.onetime-row').forEach(row => {
-      const index = parseInt(row.dataset.index);
-
-      // Year change
-      row.querySelector('[data-field="year"]')?.addEventListener('change', (e) => {
-        this.updateOneTimeRow(index, 'year', e.target.value);
-      });
-
-      // Amount change
-      const amountInput = row.querySelector('[data-field="amount"]');
-      amountInput?.addEventListener('input', (e) => {
-        this.updateOneTimeRow(index, 'amount', e.target.value);
-      });
-      amountInput?.addEventListener('blur', (e) => {
-        this.updateOneTimeRow(index, 'amount', e.target.value);
-      });
-
-      // Toggle buttons
-      row.querySelectorAll('.toggle-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          this.updateOneTimeRow(index, 'type', btn.dataset.type);
-        });
-      });
-
-      // Remove button
-      row.querySelector('[data-action="remove"]')?.addEventListener('click', () => {
-        this.removeOneTimeRow(index);
-      });
+  updateModeUI() {
+    // Update button states
+    this.elements.modeButtons?.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === this.contributionMode);
     });
+
+    // Determine what to show
+    const showDeposits = this.contributionMode === 'deposits' || this.contributionMode === 'both';
+    const showWithdrawals = this.contributionMode === 'withdrawals' || this.contributionMode === 'both';
+    const showAny = showDeposits || showWithdrawals;
+
+    // Show/hide wrapper
+    if (this.elements.fieldsWrapper) {
+      this.elements.fieldsWrapper.style.display = showAny ? 'flex' : 'none';
+    }
+
+    // Show/hide individual fields
+    if (this.elements.depositFields) {
+      this.elements.depositFields.style.display = showDeposits ? 'block' : 'none';
+    }
+    if (this.elements.withdrawalFields) {
+      this.elements.withdrawalFields.style.display = showWithdrawals ? 'block' : 'none';
+    }
+  }
+
+  handleDepositChange() {
+    const inputValue = this.elements.depositAmount?.value || '';
+    const value = parseNumber(inputValue);
+    this.deposits.amount = value || 0;
+    this.deposits.frequency = this.elements.depositFrequency?.value || 'monthly';
+
+    // Auto-expand K/M notation
+    if (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m')) {
+      this.elements.depositAmount.value = formatWithCommas(value);
+    }
+
+    this.render();
+  }
+
+  handleWithdrawalChange() {
+    const inputValue = this.elements.withdrawalAmount?.value || '';
+    const value = parseNumber(inputValue);
+    this.withdrawals.amount = value || 0;
+    this.withdrawals.frequency = this.elements.withdrawalFrequency?.value || 'monthly';
+
+    // Auto-expand K/M notation
+    if (inputValue.toLowerCase().includes('k') || inputValue.toLowerCase().includes('m')) {
+      this.elements.withdrawalAmount.value = formatWithCommas(value);
+    }
+
+    this.render();
   }
 
   getAnnualContribution() {
-    const { amount, frequency, type } = this.contributions.recurring;
-    const multiplier = { weekly: 52, monthly: 12, yearly: 1 }[frequency];
-    const annual = amount * multiplier;
-    return type === 'deposit' ? annual : -annual;
+    // If no mode selected, no contributions
+    if (!this.contributionMode) return 0;
+
+    const frequencyMultiplier = { monthly: 12, quarterly: 4, yearly: 1 };
+
+    let annual = 0;
+
+    // Add deposits
+    if (this.contributionMode === 'deposits' || this.contributionMode === 'both') {
+      const depositMultiplier = frequencyMultiplier[this.deposits.frequency] || 12;
+      annual += this.deposits.amount * depositMultiplier;
+    }
+
+    // Subtract withdrawals
+    if (this.contributionMode === 'withdrawals' || this.contributionMode === 'both') {
+      const withdrawalMultiplier = frequencyMultiplier[this.withdrawals.frequency] || 12;
+      annual -= this.withdrawals.amount * withdrawalMultiplier;
+    }
+
+    return annual;
   }
 
   calculateCompoundValue(principal, rate, years) {
@@ -254,15 +222,8 @@ class CompoundView {
     for (let year = 1; year <= years; year++) {
       // Apply compound interest
       value = value * (1 + rate / 100);
-
-      // Add recurring contribution
+      // Add net contribution (deposits - withdrawals)
       value += annualContribution;
-
-      // Add one-time deposits/withdrawals for this year
-      const oneTime = this.contributions.oneTime
-        .filter(c => c.year === year)
-        .reduce((sum, c) => sum + (c.type === 'deposit' ? c.amount : -c.amount), 0);
-      value += oneTime;
     }
 
     return Math.max(0, value); // Don't go negative
