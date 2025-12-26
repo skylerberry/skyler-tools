@@ -16,6 +16,9 @@ class CompoundView {
     this.contributionMode = null; // null, 'deposits', 'withdrawals', 'both'
     this.deposits = { amount: 0, frequency: 'monthly' };
     this.withdrawals = { amount: 0, frequency: 'monthly' };
+
+    // Selected rate for insight cards (default 50%)
+    this.selectedRate = 50;
   }
 
   init() {
@@ -54,6 +57,7 @@ class CompoundView {
       tableHead: document.querySelector('#compoundTable thead tr'),
       tableBody: document.getElementById('compoundTableBody'),
       summaryContainer: document.getElementById('compoundSummary'),
+      insightsContainer: document.getElementById('compoundInsights'),
       // Contribution elements
       modeToggle: document.getElementById('contributionModeToggle'),
       modeButtons: document.querySelectorAll('#contributionModeToggle .preset-btn'),
@@ -91,6 +95,30 @@ class CompoundView {
     this.elements.withdrawalAmount?.addEventListener('input', () => this.handleWithdrawalChange());
     this.elements.withdrawalAmount?.addEventListener('blur', () => this.handleWithdrawalChange());
     this.elements.withdrawalFrequency?.addEventListener('change', () => this.handleWithdrawalChange());
+
+    // Column header click for rate selection (event delegation)
+    this.elements.tableHead?.addEventListener('click', (e) => this.handleRateClick(e));
+  }
+
+  handleRateClick(e) {
+    const th = e.target.closest('[data-rate]');
+    if (!th) return;
+
+    const rate = parseInt(th.dataset.rate);
+    if (rate && this.returnRates.includes(rate)) {
+      this.selectedRate = rate;
+      this.updateSelectedRateUI();
+      this.renderInsights();
+    }
+  }
+
+  updateSelectedRateUI() {
+    // Update header styling
+    const headers = this.elements.tableHead?.querySelectorAll('[data-rate]');
+    headers?.forEach(th => {
+      const rate = parseInt(th.dataset.rate);
+      th.classList.toggle('compound-th--selected', rate === this.selectedRate);
+    });
   }
 
   handleInputChange() {
@@ -247,6 +275,7 @@ class CompoundView {
     this.renderHeader();
     this.renderBody();
     this.renderSummary();
+    this.renderInsights();
   }
 
   renderHeader() {
@@ -254,7 +283,8 @@ class CompoundView {
 
     let html = '<th class="compound-th compound-th--year">Year</th>';
     this.returnRates.forEach(rate => {
-      html += `<th class="compound-th growth-${rate}" data-rate="${rate}">${rate}%</th>`;
+      const selectedClass = rate === this.selectedRate ? ' compound-th--selected' : '';
+      html += `<th class="compound-th growth-${rate}${selectedClass}" data-rate="${rate}">${rate}%</th>`;
     });
     this.elements.tableHead.innerHTML = html;
   }
@@ -312,6 +342,85 @@ class CompoundView {
     }).join('');
 
     this.elements.summaryContainer.innerHTML = html;
+  }
+
+  // === Insight Calculations ===
+
+  calculateYearOverYearGain(rate, year) {
+    const currentValue = this.calculateCompoundValue(this.startingCapital, rate, year);
+    const previousValue = year === 1
+      ? this.startingCapital
+      : this.calculateCompoundValue(this.startingCapital, rate, year - 1);
+    return currentValue - previousValue;
+  }
+
+  calculateHalfGains(rate) {
+    const year5Value = this.calculateCompoundValue(this.startingCapital, rate, 5);
+    const year10Value = this.calculateCompoundValue(this.startingCapital, rate, 10);
+
+    const firstHalf = year5Value - this.startingCapital;
+    const secondHalf = year10Value - year5Value;
+    const multiplier = firstHalf > 0 ? secondHalf / firstHalf : 0;
+
+    return { firstHalf, secondHalf, multiplier };
+  }
+
+  calculateAdjacentDelta(rate) {
+    const rateIndex = this.returnRates.indexOf(rate);
+    if (rateIndex <= 0) return null;
+
+    const prevRate = this.returnRates[rateIndex - 1];
+    const currentValue = this.calculateCompoundValue(this.startingCapital, rate, 10);
+    const prevValue = this.calculateCompoundValue(this.startingCapital, prevRate, 10);
+
+    return {
+      fromRate: prevRate,
+      toRate: rate,
+      delta: currentValue - prevValue
+    };
+  }
+
+  renderInsights() {
+    if (!this.elements.insightsContainer) return;
+
+    const rate = this.selectedRate;
+
+    // Calculate all values
+    const year10Gain = this.calculateYearOverYearGain(rate, 10);
+    const year5Value = this.calculateCompoundValue(this.startingCapital, rate, 5);
+    const year10Value = this.calculateCompoundValue(this.startingCapital, rate, 10);
+    const delta = this.calculateAdjacentDelta(rate);
+
+    const html = `
+      <div class="insight-card">
+        <p class="insight-card__text">
+          In <strong>Year 10 alone</strong>, you'd earn
+          <span class="insight-highlight insight-highlight--success">${this.formatCompact(year10Gain)}</span>
+          in a single year at ${rate}% annual returns.
+        </p>
+      </div>
+      <div class="insight-card">
+        <p class="insight-card__text">
+          If you stopped at Year 5, you'd have
+          <span class="insight-highlight">${this.formatCompact(year5Value)}</span>.
+          But staying to Year 10 gets you
+          <span class="insight-highlight insight-highlight--success">${this.formatCompact(year10Value)}</span> —
+          that's <span class="insight-highlight insight-highlight--success">${this.formatCompact(year10Value - year5Value)}</span> extra
+          just for staying the course.
+        </p>
+      </div>
+      ${delta ? `
+      <div class="insight-card">
+        <p class="insight-card__text">
+          The difference between <strong>${delta.fromRate}%</strong> and <strong>${delta.toRate}%</strong> annual returns?
+          An extra <span class="insight-highlight insight-highlight--warning">${this.formatCompact(delta.delta)}</span>
+          in your pocket by Year 10.
+        </p>
+      </div>
+      ` : ''}
+    `;
+
+    this.elements.insightsContainer.innerHTML = html;
   }
 }
 

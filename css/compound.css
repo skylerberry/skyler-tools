@@ -466,8 +466,98 @@
   .view--compound.view--active .compound-header,
   .view--compound.view--active .compound-sidebar,
   .view--compound.view--active .compound-table-container,
-  .view--compound.view--active .compound-summary {
+  .view--compound.view--active .compound-summary,
+  .view--compound.view--active .compound-insights {
     animation: fadeIn 0.3s ease-out;
     animation-delay: 0ms;
+  }
+}
+
+/* === Selected Column Header === */
+
+.compound-th--selected {
+  background: rgba(59, 130, 246, 0.15) !important;
+  box-shadow: inset 0 -2px 0 var(--primary);
+  cursor: pointer;
+}
+
+.compound-th[data-rate] {
+  cursor: pointer;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.compound-th[data-rate]:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+/* === Insights Row === */
+
+.compound-insights {
+  margin-top: var(--space-4);
+}
+
+.stats-grid--insights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+}
+
+.view--compound.view--active .compound-insights {
+  animation: fadeInUp 0.4s ease-out backwards;
+  animation-delay: 200ms;
+}
+
+/* === Insight Cards (Sentence-based) === */
+
+.insight-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-lg);
+  padding: var(--space-4);
+}
+
+.insight-card__text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.insight-card__text strong {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
+}
+
+.insight-highlight {
+  font-family: var(--font-mono);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+}
+
+.insight-highlight--success {
+  color: var(--success);
+  text-shadow: 0 0 8px var(--success-glow);
+}
+
+.insight-highlight--warning {
+  color: var(--warning);
+  text-shadow: 0 0 8px var(--warning-glow);
+}
+
+/* === Responsive Insights === */
+
+@media (max-width: 1024px) {
+  .stats-grid--insights {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .compound-insights {
+    margin-top: var(--space-3);
+  }
+
+  .stats-grid--insights {
+    gap: var(--space-3);
   }
 }
