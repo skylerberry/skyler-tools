@@ -176,7 +176,7 @@
   .view-nav--expanded {
     display: flex;
     position: fixed;
-    top: calc(var(--header-height) + var(--space-2));
+    top: var(--header-height);
     left: var(--space-3);
     right: var(--space-3);
     z-index: var(--z-modal);
@@ -188,13 +188,12 @@
     padding: var(--space-2);
     margin: 0;
 
-    /* Floating card style */
+    /* Inset card style - matches content cards */
     background: var(--bg-surface);
-    border-radius: var(--border-radius-xl);
+    border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
     border: 1px solid var(--border-subtle);
-    box-shadow:
-      0 4px 6px rgba(0, 0, 0, 0.1),
-      0 12px 40px rgba(0, 0, 0, 0.4);
+    border-top: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 
     /* Animation */
     animation: navDropdown 0.2s ease-out forwards;
@@ -204,13 +203,12 @@
   .view-nav--expanded::before {
     content: '';
     position: fixed;
-    top: 0;
+    top: var(--header-height);
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: -1;
-    border-radius: 0;
   }
 
   @keyframes navDropdown {
@@ -238,16 +236,11 @@
   }
 
   .view-nav--expanded .view-nav__btn--active {
-    background: var(--bg-hover);
+    color: var(--text-primary);
   }
 
   .view-nav--expanded .view-nav__btn--active .view-nav__icon {
     color: var(--primary);
-  }
-
-  .view-nav--expanded .view-nav__btn--active .view-nav__text {
-    color: var(--text-primary);
-    font-weight: var(--font-semibold);
   }
 
   .view-nav--expanded .view-nav__text {
