@@ -337,7 +337,7 @@ class CompoundView {
       return `
         <div class="stat-card stat-card--${m.variant}">
           <span class="stat-card__label">${m.label}</span>
-          <span class="stat-card__value">${formatted}</span>
+          <span class="stat-card__value">+${formatted}</span>
           <span class="stat-card__sub">${multiplier}</span>
         </div>
       `;
