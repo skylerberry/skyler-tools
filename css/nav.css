@@ -238,7 +238,16 @@
   }
 
   .view-nav--expanded .view-nav__btn--active {
-    background: var(--bg-elevated);
+    background: var(--bg-hover);
+  }
+
+  .view-nav--expanded .view-nav__btn--active .view-nav__icon {
+    color: var(--primary);
+  }
+
+  .view-nav--expanded .view-nav__btn--active .view-nav__text {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
   }
 
   .view-nav--expanded .view-nav__text {
