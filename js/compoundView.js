@@ -240,6 +240,7 @@ class CompoundView {
   getGlowClass(value) {
     if (value >= 5000000) return 'compound-cell--gold';    // $5M+
     if (value >= 1000000) return 'compound-cell--green';   // $1M - $5M
+    if (value >= 100000) return 'compound-cell--white';    // $100K - $1M
     return '';
   }
 

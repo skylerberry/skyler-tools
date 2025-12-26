@@ -362,6 +362,7 @@
 
 .compound-cell--year {
   text-align: center;
+  color: var(--text-primary);
   font-weight: var(--font-medium);
   position: sticky;
   left: 0;
@@ -477,4 +478,10 @@
 .compound-th.growth-200 {
   color: #fb923c;
   text-shadow: 0 0 8px rgba(251, 146, 60, 0.5);
+}
+
+/* $100K+ values - white/bright */
+.compound-cell--white {
+  color: var(--text-primary);
+  font-weight: var(--font-semibold);
 }
