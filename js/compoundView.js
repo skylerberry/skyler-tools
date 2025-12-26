@@ -260,7 +260,7 @@ class CompoundView {
 
     let html = '<th class="compound-th compound-th--year">Year</th>';
     this.returnRates.forEach(rate => {
-      html += `<th class="compound-th" data-rate="${rate}">${rate}%</th>`;
+      html += `<th class="compound-th growth-${rate}" data-rate="${rate}">${rate}%</th>`;
     });
     this.elements.tableHead.innerHTML = html;
   }
