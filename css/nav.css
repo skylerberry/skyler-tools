@@ -215,7 +215,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: #1A2230;
     backdrop-filter: blur(2px);
     z-index: var(--z-modal);
     opacity: 0;
@@ -253,13 +253,11 @@
 
   .view-nav--expanded .view-nav__btn--active {
     color: var(--text-primary);
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-default);
-    box-shadow: var(--shadow-sm);
+    background: #222d3d;
   }
 
   .view-nav--expanded .view-nav__btn--active:hover {
-    background: var(--bg-elevated);
+    background: #222d3d;
   }
 
   .view-nav--expanded .view-nav__btn--active .view-nav__icon {
