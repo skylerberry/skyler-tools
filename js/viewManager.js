@@ -28,6 +28,7 @@ class ViewManager {
     this.views.compound = document.getElementById('compoundView');
     this.navElement = document.getElementById('viewNav');
     this.navButtons = document.querySelectorAll('.view-nav__btn');
+    this.mobileNavTrigger = document.getElementById('mobileNavTrigger');
 
     if (!this.views.dashboard) {
       console.warn('ViewManager: Dashboard element not found');
@@ -46,24 +47,32 @@ class ViewManager {
       }
     });
 
-    // Bind navigation buttons with mobile-aware handling
+    // Mobile trigger click handler
+    if (this.mobileNavTrigger) {
+      this.mobileNavTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.isNavExpanded()) {
+          this.collapseNav();
+        } else {
+          this.expandNav();
+        }
+      });
+      // Set initial trigger icon
+      this.updateMobileTriggerIcon();
+    }
+
+    // Bind navigation buttons
     this.navButtons.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const view = e.currentTarget.dataset.view;
         const isActive = e.currentTarget.classList.contains('view-nav__btn--active');
 
         if (this.isMobile()) {
-          if (!this.isNavExpanded()) {
-            // Collapsed: expand nav (don't switch view yet)
-            e.stopPropagation();
-            this.expandNav();
-          } else {
-            // Expanded: switch view and collapse
-            if (view && !isActive) {
-              this.switchTo(view);
-            }
-            this.collapseNav();
+          // Mobile: switch view and collapse
+          if (view && !isActive) {
+            this.switchTo(view);
           }
+          this.collapseNav();
         } else {
           // Desktop: just switch view
           if (view) this.switchTo(view);
@@ -74,7 +83,7 @@ class ViewManager {
     // Close expanded nav when clicking outside
     document.addEventListener('click', (e) => {
       if (this.isMobile() && this.isNavExpanded()) {
-        if (!this.navElement.contains(e.target)) {
+        if (!this.navElement.contains(e.target) && !this.mobileNavTrigger?.contains(e.target)) {
           this.collapseNav();
         }
       }
@@ -107,10 +116,27 @@ class ViewManager {
 
   expandNav() {
     this.navElement?.classList.add('view-nav--expanded');
+    this.mobileNavTrigger?.classList.add('mobile-nav-trigger--active');
   }
 
   collapseNav() {
     this.navElement?.classList.remove('view-nav--expanded');
+    this.mobileNavTrigger?.classList.remove('mobile-nav-trigger--active');
+  }
+
+  updateMobileTriggerIcon() {
+    if (!this.mobileNavTrigger) return;
+    const activeBtn = document.querySelector('.view-nav__btn--active');
+    if (!activeBtn) return;
+
+    const iconContainer = this.mobileNavTrigger.querySelector('.mobile-nav-trigger__icon');
+    if (!iconContainer) return;
+
+    const svg = activeBtn.querySelector('.view-nav__icon')?.cloneNode(true);
+    if (svg) {
+      iconContainer.innerHTML = '';
+      iconContainer.appendChild(svg);
+    }
   }
 
   initDeepLink() {
@@ -135,6 +161,9 @@ class ViewManager {
       const isActive = btn.dataset.view === view;
       btn.classList.toggle('view-nav__btn--active', isActive);
     });
+
+    // Update mobile trigger icon
+    this.updateMobileTriggerIcon();
 
     // Update URL hash
     window.history.replaceState(null, '', `#${view}`);
