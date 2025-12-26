@@ -3,11 +3,12 @@
  */
 
 import { parseNumber } from './utils.js';
+import { state } from './state.js';
 
 class CompoundView {
   constructor() {
     this.elements = {};
-    this.startingCapital = 10000;
+    this.startingCapital = 10000; // Will be updated from state in init()
     this.returnRates = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 150, 200];
     this.years = 10;
     this.contributions = {
@@ -19,6 +20,28 @@ class CompoundView {
   init() {
     this.cacheElements();
     this.bindEvents();
+    
+    // Set starting capital from user's account size
+    this.startingCapital = state.account.currentSize || 10000;
+    if (this.elements.input) {
+      this.elements.input.value = this.startingCapital.toLocaleString();
+    }
+    this.updatePresetStates();
+    
+    // Listen for account size changes
+    state.on('accountSizeChanged', (size) => {
+      // Only update if user hasn't manually changed the value
+      if (this.startingCapital === state.account.currentSize || 
+          this.startingCapital === 10000) {
+        this.startingCapital = size;
+        if (this.elements.input) {
+          this.elements.input.value = size.toLocaleString();
+        }
+        this.updatePresetStates();
+        this.render();
+      }
+    });
+    
     this.render();
   }
 
