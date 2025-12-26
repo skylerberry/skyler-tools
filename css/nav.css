@@ -196,8 +196,8 @@
     padding: var(--space-2);
     margin: 0;
 
-    /* Inset card style - matches content cards */
-    background: var(--bg-surface);
+    /* Match desktop nav background */
+    background: var(--bg-elevated);
     border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
     border: 1px solid var(--border-subtle);
     border-top: none;
@@ -253,11 +253,13 @@
 
   .view-nav--expanded .view-nav__btn--active {
     color: var(--text-primary);
-    background: #222d3d;
+    background: var(--bg-elevated);
+    box-shadow: none;
   }
 
   .view-nav--expanded .view-nav__btn--active:hover {
-    background: #222d3d;
+    background: var(--bg-elevated);
+    box-shadow: none;
   }
 
   .view-nav--expanded .view-nav__btn--active .view-nav__icon {
