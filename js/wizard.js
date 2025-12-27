@@ -107,9 +107,13 @@ class TradeWizard {
       }
     });
 
-    // Step 1 buttons
-    this.elements.skipAllBtn?.addEventListener('click', () => this.skipAll());
-    this.elements.next1Btn?.addEventListener('click', () => this.goToStep(2));
+    // Step 1 buttons - require ticker before proceeding
+    this.elements.skipAllBtn?.addEventListener('click', () => {
+      if (this.validateTicker()) this.skipAll();
+    });
+    this.elements.next1Btn?.addEventListener('click', () => {
+      if (this.validateTicker()) this.goToStep(2);
+    });
 
     // Step 2 buttons
     this.elements.back2Btn?.addEventListener('click', () => this.goToStep(1));
@@ -230,6 +234,20 @@ class TradeWizard {
     if (this.elements.wizardTickerInput) {
       this.elements.wizardTickerInput.classList.toggle('wizard-ticker-input--empty', !hasValue);
     }
+  }
+
+  validateTicker() {
+    const ticker = this.elements.wizardTickerInput?.value.trim();
+    if (!ticker) {
+      // Shake the input to indicate error
+      this.elements.wizardTickerInput?.classList.add('wizard-ticker-input--shake');
+      this.elements.wizardTickerInput?.focus();
+      setTimeout(() => {
+        this.elements.wizardTickerInput?.classList.remove('wizard-ticker-input--shake');
+      }, 500);
+      return false;
+    }
+    return true;
   }
 
   prefillFromCalculator() {
