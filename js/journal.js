@@ -288,8 +288,8 @@ class Journal {
       return `
         <div class="trade-card" data-id="${trade.id}">
           <div class="trade-card__header">
-            <span class="trade-card__ticker">${trade.ticker}</span>
             <span class="status-badge status-badge--${isTrimmed ? 'trimmed' : 'active'}">${isTrimmed ? 'Trimmed' : 'Open'}</span>
+            <span class="trade-card__ticker">${trade.ticker}</span>
             <span class="trade-card__shares">${shares} shares${isTrimmed ? ` (${trade.originalShares} orig)` : ''}</span>
           </div>
           <div class="trade-card__details">
