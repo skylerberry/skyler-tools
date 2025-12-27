@@ -224,6 +224,11 @@
   background: var(--warning-muted);
 }
 
+.position-card__status--freeroll {
+  color: var(--primary);
+  background: var(--primary-muted);
+}
+
 .position-card__status::before {
   content: '';
   width: 6px;

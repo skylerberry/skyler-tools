@@ -134,11 +134,18 @@ class PositionsView {
       return;
     }
 
-    // Calculate total risk
+    // Calculate NET risk (remaining risk minus realized profit for trimmed trades)
     const totalRisk = activeTrades.reduce((sum, t) => {
       const shares = t.remainingShares ?? t.shares;
       const riskPerShare = t.entry - t.stop;
-      return sum + (shares * riskPerShare);
+      const grossRisk = shares * riskPerShare;
+
+      // For trimmed trades, subtract realized profit (net risk can't go below 0)
+      const realizedPnL = t.totalRealizedPnL || 0;
+      const isTrimmed = t.status === 'trimmed';
+      const netRisk = isTrimmed ? Math.max(0, grossRisk - realizedPnL) : grossRisk;
+
+      return sum + netRisk;
     }, 0);
 
     const riskPercent = (totalRisk / state.account.currentSize) * 100;
@@ -170,17 +177,33 @@ class PositionsView {
     this.elements.grid.innerHTML = positions.map(trade => {
       const shares = trade.remainingShares ?? trade.shares;
       const riskPerShare = trade.entry - trade.stop;
-      const currentRisk = shares * riskPerShare;
+      const grossRisk = shares * riskPerShare;
       const isTrimmed = trade.status === 'trimmed';
       const realizedPnL = trade.totalRealizedPnL || 0;
-      const riskPercent = (currentRisk / state.account.currentSize) * 100;
+
+      // For trimmed trades, calculate NET risk (remaining risk - realized profit)
+      const netRisk = isTrimmed ? Math.max(0, grossRisk - realizedPnL) : grossRisk;
+      const riskPercent = (netRisk / state.account.currentSize) * 100;
+
+      // Check if trade is "free rolled" - realized profit covers remaining risk
+      const isFreeRoll = isTrimmed && realizedPnL >= (grossRisk - 0.01);
+
+      // Determine status
+      let statusClass = trade.status;
+      let statusText = 'Open';
+      if (isFreeRoll) {
+        statusClass = 'freeroll';
+        statusText = 'Free Rolled';
+      } else if (isTrimmed) {
+        statusText = 'Trimmed';
+      }
 
       return `
         <div class="position-card ${isTrimmed ? 'position-card--trimmed' : ''}" data-id="${trade.id}">
           <div class="position-card__header">
             <span class="position-card__ticker">${trade.ticker}</span>
-            <span class="position-card__status position-card__status--${trade.status}">
-              ${isTrimmed ? 'Trimmed' : 'Open'}
+            <span class="position-card__status position-card__status--${statusClass}">
+              ${statusText}
             </span>
           </div>
 
@@ -208,7 +231,7 @@ class PositionsView {
           <div class="position-card__risk">
             <div class="position-card__risk-row">
               <span class="position-card__risk-label">Open Risk</span>
-              <span class="position-card__risk-value">${formatCurrency(currentRisk)} (${formatPercent(riskPercent)})</span>
+              <span class="position-card__risk-value">${formatCurrency(netRisk)} (${formatPercent(riskPercent)})</span>
             </div>
             ${isTrimmed ? `
             <div class="position-card__risk-row position-card__realized">
