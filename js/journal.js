@@ -289,8 +289,12 @@ class Journal {
       // Use small tolerance for floating point comparison
       const isFreeRoll = isTrimmed && realizedPnL >= (currentRisk - 0.01);
 
-      // Calculate risk percentage and color
-      const riskPercent = (currentRisk / state.account.currentSize) * 100;
+      // For trimmed trades, calculate NET risk (remaining risk - realized profit)
+      // Net risk can't go below 0 (that's when it becomes "free roll")
+      const netRisk = isTrimmed ? Math.max(0, currentRisk - realizedPnL) : currentRisk;
+
+      // Calculate risk percentage and color based on net risk
+      const riskPercent = (netRisk / state.account.currentSize) * 100;
       let riskColorClass = 'text-success'; // green for < 0.5%
       if (riskPercent >= 2) {
         riskColorClass = 'text-danger'; // red for 2%+
@@ -337,7 +341,7 @@ class Journal {
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">Risk</span>
-              <span class="trade-card__value ${riskColorClass}">${riskPercent.toFixed(2)}% (${formatCurrency(currentRisk)})</span>
+              <span class="trade-card__value ${riskColorClass}">${riskPercent.toFixed(2)}% (${formatCurrency(netRisk)})</span>
             </div>
             ${isTrimmed ? `
             <div class="trade-card__detail">

@@ -1,11 +1,44 @@
 # Trade Manager - Current Status
 
-**Last Updated:** December 2024
+**Last Updated:** December 27, 2024
 **Branch:** main
 
 ---
 
 ## Recently Completed Features
+
+### Active Trades Panel Enhancements ✅
+Major improvements to trade card display and risk management.
+
+**Features:**
+- **5 Trade Limit** - Panel shows latest 5 active trades
+- **5R Target Display** - Shows calculated 5R profit target per trade
+- **Color-Coded Values** - Entry (blue), Stop (red), 5R Target (gold) matching R-Levels ladder
+- **Net Risk Display** - For trimmed trades, shows risk minus realized profit
+- **Risk % with Color Coding** - Green (<0.5%), Yellow (0.5-2%), Red (>2%)
+- **Free Roll Detection** - Status badge shows "Free Roll" when realized profit covers remaining risk
+- **Reorganized Layout** - Ticker + shares stacked left, status badge right
+
+### Journal Table Improvements ✅
+- **PnL% Column** - Added percentage-based P&L display
+- **Renamed Columns** - "PnL" → "PnL ($)", "R" → "R-Multiple"
+- **Closed Status Pill** - Changed from green to grey for clarity
+
+### Trim Modal Enhancements ✅
+- **Dynamic Confirm Button** - Shows "Confirm Close" for 100% position, "Confirm Trim" for partial
+- **Exit Price Field Width** - Increased to prevent value truncation
+
+### Calculator Updates ✅
+- **Risk Scenarios** - Added 2% to risk levels (0.1%, 0.25%, 0.5%, 1%, 1.5%, 2%)
+- **Open Risk Tooltip** - Explains total dollar risk across all active trades
+
+### Scans View (Coming Soon) ✅
+Infrastructure in place for future scan archive feature.
+- Navigation entry added
+- Empty state with "Coming Soon" message
+- Manifest and upload script skeleton ready
+
+---
 
 ### Trade Journal Hero Feature ✅
 Full implementation of guided wizard UX with micro-rewards and achievements.
