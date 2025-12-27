@@ -21,6 +21,7 @@ import { equityChart } from './statsChart.js';
 import { positionsView } from './positionsView.js';
 import { journalView } from './journalView.js';
 import { compoundView } from './compoundView.js';
+import { scansView } from './scansView.js';
 
 class App {
   constructor() {
@@ -73,10 +74,11 @@ class App {
     stats.init();
     equityChart.init();
 
-    // Initialize positions, journal, and compound views
+    // Initialize positions, journal, compound, and scans views
     positionsView.init();
     journalView.init();
     compoundView.init();
+    scansView.init();
 
     // Initialize keyboard shortcuts
     keyboard.init();

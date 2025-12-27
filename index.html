@@ -53,6 +53,7 @@
   <link rel="stylesheet" href="css/journal.css">
   <link rel="stylesheet" href="css/stats.css">
   <link rel="stylesheet" href="css/compound.css">
+  <link rel="stylesheet" href="css/scans.css">
 </head>
 <body>
   <div class="app">
@@ -107,6 +108,14 @@
               <path d="M18 9l-5-6-4 10-3-3"></path>
             </svg>
             <span class="view-nav__text">Compound</span>
+          </button>
+          <button class="view-nav__btn" data-view="scans">
+            <svg class="view-nav__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <circle cx="12" cy="12" r="6"></circle>
+              <circle cx="12" cy="12" r="2"></circle>
+            </svg>
+            <span class="view-nav__text">Scans</span>
           </button>
         </nav>
       </div>
@@ -1027,6 +1036,43 @@
           <div class="compound-insights stats-grid stats-grid--insights" id="compoundInsights">
             <!-- 3 insight cards rendered by JS -->
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Scans View -->
+    <section class="scans-view view--hidden" id="scansView">
+      <div class="scans-header">
+        <div class="scans-header__left">
+          <span class="scans-header__icon">🎯</span>
+          <div>
+            <h1 class="scans-header__title">Scans</h1>
+            <span class="scans-header__subtitle" id="scansSubtitle">Daily stock scans archive</span>
+          </div>
+        </div>
+        <div class="scans-header__nav">
+          <button class="btn btn--secondary btn--sm" id="scansPrevBtn" disabled>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Prev
+          </button>
+          <button class="btn btn--secondary btn--sm" id="scansNextBtn" disabled>
+            Next
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Scan Content Container -->
+      <div class="scans-content" id="scansContent">
+        <!-- Scan HTML will be injected here -->
+        <div class="scans-empty" id="scansEmpty">
+          <span class="scans-empty__icon">📡</span>
+          <h2 class="scans-empty__title">No Scans Yet</h2>
+          <p class="scans-empty__text">Scan results will appear here once uploaded.</p>
         </div>
       </div>
     </section>

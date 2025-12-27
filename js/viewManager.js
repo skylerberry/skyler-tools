@@ -12,7 +12,8 @@ class ViewManager {
       positions: null,
       journal: null,
       stats: null,
-      compound: null
+      compound: null,
+      scans: null
     };
     this.navElement = null;
     this.navButtons = null;
@@ -28,6 +29,7 @@ class ViewManager {
     this.views.journal = document.getElementById('journalView');
     this.views.stats = document.getElementById('statsView');
     this.views.compound = document.getElementById('compoundView');
+    this.views.scans = document.getElementById('scansView');
     this.navElement = document.getElementById('viewNav');
     this.navButtons = document.querySelectorAll('.view-nav__btn');
     this.mobileNavTrigger = document.getElementById('mobileNavTrigger');
@@ -124,7 +126,7 @@ class ViewManager {
     // Keyboard shortcuts: Cmd/Ctrl + 1-4 for direct navigation
     document.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey) {
-        const viewMap = { '1': 'dashboard', '2': 'positions', '3': 'journal', '4': 'stats', '5': 'compound' };
+        const viewMap = { '1': 'dashboard', '2': 'positions', '3': 'journal', '4': 'stats', '5': 'compound', '6': 'scans' };
         if (viewMap[e.key]) {
           e.preventDefault();
           this.switchTo(viewMap[e.key]);
@@ -238,8 +240,8 @@ class ViewManager {
   }
 
   toggle() {
-    // Cycle through views: dashboard → positions → journal → stats → dashboard
-    const viewOrder = ['dashboard', 'positions', 'journal', 'stats', 'compound'];
+    // Cycle through views: dashboard → positions → journal → stats → compound → scans
+    const viewOrder = ['dashboard', 'positions', 'journal', 'stats', 'compound', 'scans'];
     const currentIndex = viewOrder.indexOf(this.currentView);
     const nextIndex = (currentIndex + 1) % viewOrder.length;
     this.switchTo(viewOrder[nextIndex]);
@@ -263,6 +265,10 @@ class ViewManager {
 
   isCompoundView() {
     return this.currentView === 'compound';
+  }
+
+  isScansView() {
+    return this.currentView === 'scans';
   }
 
   // Navigate to a specific view (for use by other modules)
