@@ -395,9 +395,12 @@ class JournalView {
         <div class="journal-row-details__section">
           <div class="journal-row-details__label">Trim History</div>
           <div class="journal-row-details__value">
-            ${trade.trimHistory.map(trim => `
-              ${trim.shares} shares @ ${formatCurrency(trim.exitPrice)} = ${trim.pnl >= 0 ? '+' : ''}${formatCurrency(trim.pnl)} (${trim.rMultiple >= 0 ? '+' : ''}${trim.rMultiple.toFixed(1)}R)
-            `).join('<br>')}
+            ${trade.trimHistory.map((trim, index) => {
+              const isLastEntry = index === trade.trimHistory.length - 1;
+              const isClose = isLastEntry && trade.status === 'closed';
+              const actionText = isClose ? 'Close' : 'Trim';
+              return `<strong>${actionText}</strong> ${formatDate(trim.date)}: ${trim.shares} shares @ ${formatCurrency(trim.exitPrice)} = ${trim.pnl >= 0 ? '+' : ''}${formatCurrency(trim.pnl)} (${trim.rMultiple >= 0 ? '+' : ''}${trim.rMultiple.toFixed(1)}R)`;
+            }).join('<br>')}
           </div>
         </div>
         ` : ''}
