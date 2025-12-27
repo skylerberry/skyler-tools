@@ -285,6 +285,15 @@ class Journal {
       const realizedPnL = trade.totalRealizedPnL || 0;
       const target5R = trade.entry + (5 * riskPerShare);
 
+      // Calculate risk percentage and color
+      const riskPercent = (currentRisk / state.account.currentSize) * 100;
+      let riskColorClass = 'text-success'; // green for < 0.5%
+      if (riskPercent >= 1) {
+        riskColorClass = 'text-danger'; // red for 1%+
+      } else if (riskPercent >= 0.5) {
+        riskColorClass = 'text-warning'; // yellow for 0.5%-1%
+      }
+
       return `
         <div class="trade-card" data-id="${trade.id}">
           <div class="trade-card__header">
@@ -309,7 +318,7 @@ class Journal {
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">Risk</span>
-              <span class="trade-card__value">${formatCurrency(currentRisk)}</span>
+              <span class="trade-card__value ${riskColorClass}">${riskPercent.toFixed(2)}%</span>
             </div>
             ${isTrimmed ? `
             <div class="trade-card__detail">
