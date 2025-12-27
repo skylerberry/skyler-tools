@@ -350,12 +350,8 @@ class JournalView {
             </span>
           </td>
           <td class="journal-table__actions">
-            <button class="journal-table__action-btn journal-table__action-btn--expand ${isExpanded ? 'expanded' : ''}"
-                    data-action="expand" data-id="${trade.id}">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </button>
+            <button class="journal-table__action-btn" data-action="expand" data-id="${trade.id}" title="View details">👁️</button>
+            <button class="journal-table__action-btn journal-table__action-btn--delete" data-action="delete" data-id="${trade.id}" title="Delete trade">🗑️</button>
           </td>
         </tr>
         <tr class="journal-table__row-details ${isExpanded ? 'expanded' : ''}" data-details-id="${trade.id}">
