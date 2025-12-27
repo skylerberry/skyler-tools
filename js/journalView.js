@@ -304,6 +304,16 @@ class JournalView {
         rMultiple = pnl / trade.riskDollars;
       }
 
+      // Calculate P&L % based on position cost
+      let pnlPercent = null;
+      if (hasPnL) {
+        const totalShares = trade.originalShares || trade.shares;
+        const positionCost = trade.entry * totalShares;
+        if (positionCost > 0) {
+          pnlPercent = (pnl / positionCost) * 100;
+        }
+      }
+
       const isExpanded = this.expandedRows.has(trade.id);
 
       return `
@@ -315,6 +325,9 @@ class JournalView {
           <td>${sharesDisplay}</td>
           <td class="${hasPnL ? (pnl >= 0 ? 'journal-table__pnl--positive' : 'journal-table__pnl--negative') : ''}">
             ${hasPnL ? `${pnl >= 0 ? '+' : ''}${formatCurrency(pnl)}` : '—'}
+          </td>
+          <td class="${hasPnL ? (pnlPercent >= 0 ? 'journal-table__pnl--positive' : 'journal-table__pnl--negative') : ''}">
+            ${pnlPercent !== null ? `${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%` : '—'}
           </td>
           <td>${rMultiple !== null ? (Math.abs(rMultiple) < 0.05 ? '<span class="tag tag--breakeven">BE</span>' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(1)}R`) : '—'}</td>
           <td>
@@ -332,7 +345,7 @@ class JournalView {
           </td>
         </tr>
         <tr class="journal-table__row-details ${isExpanded ? 'expanded' : ''}" data-details-id="${trade.id}">
-          <td colspan="9">
+          <td colspan="10">
             ${this.renderRowDetails(trade)}
           </td>
         </tr>

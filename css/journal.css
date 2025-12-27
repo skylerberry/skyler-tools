@@ -243,8 +243,8 @@
 }
 
 .journal-table__status--closed {
-  color: var(--success);
-  background: var(--success-muted);
+  color: var(--text-muted);
+  background: var(--bg-elevated);
 }
 
 /* Breakeven Tag */
