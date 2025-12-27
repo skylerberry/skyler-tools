@@ -289,6 +289,7 @@ class Journal {
         <div class="trade-card" data-id="${trade.id}">
           <div class="trade-card__header">
             <span class="trade-card__ticker">${trade.ticker}</span>
+            <span class="status-badge status-badge--${isTrimmed ? 'trimmed' : 'active'}">${isTrimmed ? 'Trimmed' : 'Open'}</span>
             <span class="trade-card__shares">${shares} shares${isTrimmed ? ` (${trade.originalShares} orig)` : ''}</span>
           </div>
           <div class="trade-card__details">
@@ -307,10 +308,6 @@ class Journal {
             <div class="trade-card__detail">
               <span class="trade-card__label">Risk</span>
               <span class="trade-card__value">${formatCurrency(currentRisk)}</span>
-            </div>
-            <div class="trade-card__detail">
-              <span class="trade-card__label">Status</span>
-              <span class="status-badge status-badge--${trade.status}">${isTrimmed ? 'Trimmed' : 'Open'}</span>
             </div>
             ${isTrimmed ? `
             <div class="trade-card__detail">

@@ -2750,6 +2750,11 @@
   background: var(--success-muted);
 }
 
+.status-badge--active {
+  color: var(--success);
+  background: var(--success-muted);
+}
+
 .status-badge::before {
   content: '';
   width: 6px;
