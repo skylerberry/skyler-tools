@@ -233,8 +233,8 @@
 }
 
 .journal-table__status--open {
-  color: var(--primary);
-  background: var(--primary-muted);
+  color: var(--success);
+  background: var(--success-muted);
 }
 
 .journal-table__status--trimmed {
