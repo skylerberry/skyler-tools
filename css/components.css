@@ -2911,8 +2911,14 @@
 .trade-card__header {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  justify-content: space-between;
   margin-bottom: var(--space-3);
+}
+
+.trade-card__header-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .trade-card__ticker {
@@ -2925,7 +2931,6 @@
 .trade-card__shares {
   font-size: var(--text-sm);
   color: var(--text-secondary);
-  margin-left: auto;
 }
 
 .trade-card__details {
