@@ -363,6 +363,63 @@
   grid-column: span 2;
 }
 
+/* Notes editing */
+.journal-row-details__notes-container {
+  width: 100%;
+}
+
+.journal-row-details__notes-view {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.journal-row-details__notes-view .journal-row-details__value {
+  flex: 1;
+}
+
+.journal-row-details__notes-edit {
+  width: 100%;
+}
+
+.journal-row-details__notes-input {
+  width: 100%;
+  padding: var(--space-2);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+  min-height: 60px;
+}
+
+.journal-row-details__notes-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.journal-row-details__notes-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Trade log entries */
+.journal-row-details__trade-log {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.trade-log-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* === Empty State === */
 
 .journal-empty {

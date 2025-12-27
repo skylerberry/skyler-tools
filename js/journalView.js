@@ -379,7 +379,19 @@ class JournalView {
       <div class="journal-row-details">
         <div class="journal-row-details__section">
           <div class="journal-row-details__label">Notes</div>
-          <div class="journal-row-details__value">${trade.notes || 'No notes added'}</div>
+          <div class="journal-row-details__notes-container" data-trade-id="${trade.id}">
+            <div class="journal-row-details__notes-view">
+              <span class="journal-row-details__value">${trade.notes || 'No notes added'}</span>
+              <button class="btn btn--xs btn--ghost" data-action="edit-notes" data-id="${trade.id}">Edit</button>
+            </div>
+            <div class="journal-row-details__notes-edit" style="display: none;">
+              <textarea class="journal-row-details__notes-input" rows="3">${trade.notes || ''}</textarea>
+              <div class="journal-row-details__notes-actions">
+                <button class="btn btn--xs btn--primary" data-action="save-notes" data-id="${trade.id}">Save</button>
+                <button class="btn btn--xs btn--ghost" data-action="cancel-notes" data-id="${trade.id}">Cancel</button>
+              </div>
+            </div>
+          </div>
         </div>
         ${trade.thesis ? `
         <div class="journal-row-details__section">
@@ -393,14 +405,15 @@ class JournalView {
         ` : ''}
         ${trade.trimHistory && trade.trimHistory.length > 0 ? `
         <div class="journal-row-details__section">
-          <div class="journal-row-details__label">Trim History</div>
-          <div class="journal-row-details__value">
+          <div class="journal-row-details__label">Trade Log</div>
+          <div class="journal-row-details__value journal-row-details__trade-log">
             ${trade.trimHistory.map((trim, index) => {
               const isLastEntry = index === trade.trimHistory.length - 1;
               const isClose = isLastEntry && trade.status === 'closed';
-              const actionText = isClose ? 'Close' : 'Trim';
-              return `<strong>${actionText}</strong> ${formatDate(trim.date)}: ${trim.shares} shares @ ${formatCurrency(trim.exitPrice)} = ${trim.pnl >= 0 ? '+' : ''}${formatCurrency(trim.pnl)} (${trim.rMultiple >= 0 ? '+' : ''}${trim.rMultiple.toFixed(1)}R)`;
-            }).join('<br>')}
+              const actionText = isClose ? 'Closed' : 'Trimmed';
+              const statusClass = isClose ? 'closed' : 'trimmed';
+              return `<div class="trade-log-entry"><span class="journal-table__status journal-table__status--${statusClass}">${actionText}</span> ${formatDate(trim.date)}: ${trim.shares} shares @ ${formatCurrency(trim.exitPrice)} = <span class="${trim.pnl >= 0 ? 'text-success' : 'text-danger'}">${trim.pnl >= 0 ? '+' : ''}${formatCurrency(trim.pnl)}</span> (${trim.rMultiple >= 0 ? '+' : ''}${trim.rMultiple.toFixed(1)}R)</div>`;
+            }).join('')}
           </div>
         </div>
         ` : ''}
@@ -439,6 +452,45 @@ class JournalView {
         const id = parseInt(e.currentTarget.dataset.id);
         if (confirm('Delete this trade?')) {
           state.deleteJournalEntry(id);
+        }
+      });
+    });
+
+    // Edit notes buttons
+    this.elements.tableBody.querySelectorAll('[data-action="edit-notes"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const container = this.elements.tableBody.querySelector(`.journal-row-details__notes-container[data-trade-id="${id}"]`);
+        if (container) {
+          container.querySelector('.journal-row-details__notes-view').style.display = 'none';
+          container.querySelector('.journal-row-details__notes-edit').style.display = 'block';
+          container.querySelector('.journal-row-details__notes-input').focus();
+        }
+      });
+    });
+
+    // Save notes buttons
+    this.elements.tableBody.querySelectorAll('[data-action="save-notes"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const container = this.elements.tableBody.querySelector(`.journal-row-details__notes-container[data-trade-id="${id}"]`);
+        if (container) {
+          const newNotes = container.querySelector('.journal-row-details__notes-input').value;
+          state.updateJournalEntry(id, { notes: newNotes });
+        }
+      });
+    });
+
+    // Cancel notes buttons
+    this.elements.tableBody.querySelectorAll('[data-action="cancel-notes"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const container = this.elements.tableBody.querySelector(`.journal-row-details__notes-container[data-trade-id="${id}"]`);
+        const trade = state.journal.entries.find(t => t.id === id);
+        if (container && trade) {
+          container.querySelector('.journal-row-details__notes-input').value = trade.notes || '';
+          container.querySelector('.journal-row-details__notes-view').style.display = 'flex';
+          container.querySelector('.journal-row-details__notes-edit').style.display = 'none';
         }
       });
     });

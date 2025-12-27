@@ -91,6 +91,11 @@
   font-size: var(--text-xs);
 }
 
+.btn--xs {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-xs);
+}
+
 /* Icon button */
 .icon-btn {
   display: flex;
