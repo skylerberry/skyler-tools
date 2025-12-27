@@ -315,7 +315,7 @@ class Journal {
             ` : ''}
           </div>
           <div class="trade-card__actions">
-            <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">${isTrimmed ? 'Trim More' : 'Close'}</button>
+            <button class="btn btn--sm btn--secondary" onclick="closeTrade(${trade.id})">${isTrimmed ? 'Trim More' : 'Manage'}</button>
             <button class="btn btn--sm btn--secondary btn--danger-outline" onclick="deleteTrade(${trade.id})">Delete</button>
           </div>
         </div>
