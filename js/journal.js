@@ -285,8 +285,8 @@ class Journal {
       const realizedPnL = trade.totalRealizedPnL || 0;
       const target5R = trade.entry + (5 * riskPerShare);
 
-      // Check if trade is "free rolled" - realized profit covers original risk
-      const isFreeRoll = isTrimmed && realizedPnL >= trade.riskDollars;
+      // Check if trade is "free rolled" - realized profit covers remaining risk
+      const isFreeRoll = isTrimmed && realizedPnL >= currentRisk;
 
       // Calculate risk percentage and color
       const riskPercent = (currentRisk / state.account.currentSize) * 100;
