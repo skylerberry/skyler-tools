@@ -283,6 +283,7 @@ class Journal {
       const currentRisk = shares * riskPerShare;
       const isTrimmed = trade.status === 'trimmed';
       const realizedPnL = trade.totalRealizedPnL || 0;
+      const target5R = trade.entry + (5 * riskPerShare);
 
       return `
         <div class="trade-card" data-id="${trade.id}">
@@ -298,6 +299,10 @@ class Journal {
             <div class="trade-card__detail">
               <span class="trade-card__label">Stop</span>
               <span class="trade-card__value">${formatCurrency(trade.stop)}</span>
+            </div>
+            <div class="trade-card__detail">
+              <span class="trade-card__label">5R Target</span>
+              <span class="trade-card__value text-success">${formatCurrency(target5R)}</span>
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">Risk</span>
