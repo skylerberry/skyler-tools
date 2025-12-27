@@ -96,6 +96,44 @@ def sort_rows(headers, rows, sort_col, order='desc'):
     return sorted(rows, key=lambda r: parse_value(r[col_idx]) if col_idx < len(r) else '', reverse=reverse)
 
 
+def format_currency(val):
+    """Format large numbers as $1.23M, $1.23B, etc."""
+    try:
+        num = float(val.strip().replace(',', ''))
+    except ValueError:
+        return val
+
+    if abs(num) >= 1_000_000_000:
+        return f"${num / 1_000_000_000:.2f}B"
+    elif abs(num) >= 1_000_000:
+        return f"${num / 1_000_000:.2f}M"
+    elif abs(num) >= 1_000:
+        return f"${num / 1_000:.2f}K"
+    else:
+        return f"${num:.2f}"
+
+
+def format_cell(cell, header):
+    """Format cell value based on column type."""
+    val = cell.strip()
+
+    # Skip if already formatted or empty
+    if not val or val.startswith('$') or val.endswith('%'):
+        return val
+
+    # Format liquidity/volume columns with large numbers
+    liquidity_cols = ['daily liquidity', 'liquidity', 'volume', 'avg volume', 'market cap']
+    if header.lower() in liquidity_cols:
+        try:
+            num = float(val.replace(',', ''))
+            if num >= 1000:  # Only format large numbers
+                return format_currency(val)
+        except ValueError:
+            pass
+
+    return val
+
+
 def generate_html(headers, rows):
     """Generate HTML table from data."""
     html = ['<table>']
@@ -113,6 +151,10 @@ def generate_html(headers, rows):
     for row in rows:
         html.append('    <tr>')
         for i, cell in enumerate(row):
+            # Format cell value
+            header = headers[i] if i < len(headers) else ''
+            formatted = format_cell(cell, header)
+
             # Add positive/negative class for numeric values
             cell_class = ''
             cell_val = cell.strip()
@@ -121,7 +163,7 @@ def generate_html(headers, rows):
             elif cell_val.startswith('-'):
                 cell_class = ' class="negative"'
 
-            html.append(f'      <td{cell_class}>{cell}</td>')
+            html.append(f'      <td{cell_class}>{formatted}</td>')
         html.append('    </tr>')
     html.append('  </tbody>')
 
