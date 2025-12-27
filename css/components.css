@@ -2957,7 +2957,6 @@
 
 .trade-card__value {
   font-family: var(--font-mono);
-  color: var(--text-primary);
 }
 
 .trade-card__actions {

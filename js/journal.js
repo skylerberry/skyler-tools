@@ -286,7 +286,8 @@ class Journal {
       const target5R = trade.entry + (5 * riskPerShare);
 
       // Check if trade is "free rolled" - realized profit covers remaining risk
-      const isFreeRoll = isTrimmed && realizedPnL >= currentRisk;
+      // Use small tolerance for floating point comparison
+      const isFreeRoll = isTrimmed && realizedPnL >= (currentRisk - 0.01);
 
       // Calculate risk percentage and color
       const riskPercent = (currentRisk / state.account.currentSize) * 100;
