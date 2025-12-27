@@ -314,6 +314,20 @@ class JournalView {
         }
       }
 
+      // Check if trade is "free rolled" - realized profit covers remaining risk
+      const isTrimmed = trade.status === 'trimmed';
+      const realizedPnL = trade.totalRealizedPnL || 0;
+      const currentRisk = shares * (trade.entry - trade.stop);
+      const isFreeRoll = isTrimmed && realizedPnL >= (currentRisk - 0.01);
+
+      // Determine display status
+      let statusClass = trade.status;
+      let statusText = trade.status.charAt(0).toUpperCase() + trade.status.slice(1);
+      if (isFreeRoll) {
+        statusClass = 'freeroll';
+        statusText = 'Free Rolled';
+      }
+
       const isExpanded = this.expandedRows.has(trade.id);
 
       return `
@@ -331,8 +345,8 @@ class JournalView {
           </td>
           <td>${rMultiple !== null ? (Math.abs(rMultiple) < 0.05 ? '<span class="tag tag--breakeven">BE</span>' : `${rMultiple >= 0 ? '+' : ''}${rMultiple.toFixed(1)}R`) : '—'}</td>
           <td>
-            <span class="journal-table__status journal-table__status--${trade.status}">
-              ${trade.status.charAt(0).toUpperCase() + trade.status.slice(1)}
+            <span class="journal-table__status journal-table__status--${statusClass}">
+              ${statusText}
             </span>
           </td>
           <td class="journal-table__actions">
