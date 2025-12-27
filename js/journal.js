@@ -325,11 +325,11 @@ class Journal {
           <div class="trade-card__details">
             <div class="trade-card__detail">
               <span class="trade-card__label">Entry</span>
-              <span class="trade-card__value">${formatCurrency(trade.entry)}</span>
+              <span class="trade-card__value text-primary">${formatCurrency(trade.entry)}</span>
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">Stop</span>
-              <span class="trade-card__value">${formatCurrency(trade.stop)}</span>
+              <span class="trade-card__value text-danger">${formatCurrency(trade.stop)}</span>
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">5R Target</span>
