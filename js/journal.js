@@ -308,7 +308,7 @@ class Journal {
       let statusClass, statusText;
       if (isFreeRoll) {
         statusClass = 'freeroll';
-        statusText = 'Free Roll';
+        statusText = 'Free Rolled';
       } else if (isTrimmed) {
         statusClass = 'trimmed';
         statusText = 'Trimmed';
