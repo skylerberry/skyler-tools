@@ -1,20 +1,3 @@
 {
-  "scans": [
-    {
-      "id": "2025-12-27-semis",
-      "date": "2025-12-27",
-      "name": "semis",
-      "title": "Semiconductor Momentum",
-      "tags": [],
-      "file": "2025-12-27-semis.html"
-    },
-    {
-      "id": "2025-12-27-Global",
-      "date": "2025-12-27",
-      "name": "Global",
-      "title": "Global",
-      "tags": [],
-      "file": "2025-12-27-Global.html"
-    }
-  ]
+  "scans": []
 }
