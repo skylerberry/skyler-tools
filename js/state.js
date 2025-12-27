@@ -64,7 +64,7 @@ class AppState {
           }
         },
         settings: {
-          wizardEnabled: false,  // Default OFF for existing users
+          wizardEnabled: true,  // Default ON to encourage ticker entry
           celebrationsEnabled: true
         },
         schemaVersion: 1

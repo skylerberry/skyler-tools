@@ -45,7 +45,8 @@ class TradeWizard {
       steps: document.querySelectorAll('.wizard-step'),
 
       // Step 1 - Trade Details
-      wizardTicker: document.getElementById('wizardTicker'),
+      wizardTickerInput: document.getElementById('wizardTickerInput'),
+      wizardTickerHint: document.getElementById('wizardTickerHint'),
       wizardEntry: document.getElementById('wizardEntry'),
       wizardStop: document.getElementById('wizardStop'),
       wizardShares: document.getElementById('wizardShares'),
@@ -152,6 +153,15 @@ class TradeWizard {
         });
       });
     });
+
+    // Ticker input - update state and UI as user types
+    this.elements.wizardTickerInput?.addEventListener('input', () => {
+      const ticker = this.elements.wizardTickerInput.value.toUpperCase();
+      this.elements.wizardTickerInput.value = ticker; // Force uppercase
+      this.updateTickerHint();
+      // Update state so it persists
+      state.updateTrade({ ticker });
+    });
   }
 
   isOpen() {
@@ -212,14 +222,25 @@ class TradeWizard {
     this.elements.progressSteps?.[0]?.classList.add('active');
   }
 
+  updateTickerHint() {
+    const hasValue = this.elements.wizardTickerInput?.value.trim().length > 0;
+    if (this.elements.wizardTickerHint) {
+      this.elements.wizardTickerHint.style.display = hasValue ? 'none' : 'block';
+    }
+    if (this.elements.wizardTickerInput) {
+      this.elements.wizardTickerInput.classList.toggle('wizard-ticker-input--empty', !hasValue);
+    }
+  }
+
   prefillFromCalculator() {
     const trade = state.trade;
     const results = state.results;
     const account = state.account;
 
-    // Step 1 summary
-    if (this.elements.wizardTicker) {
-      this.elements.wizardTicker.textContent = trade.ticker || 'TICKER';
+    // Step 1 ticker input
+    if (this.elements.wizardTickerInput) {
+      this.elements.wizardTickerInput.value = trade.ticker || '';
+      this.updateTickerHint();
     }
     if (this.elements.wizardEntry) {
       this.elements.wizardEntry.textContent = formatCurrency(trade.entry || 0);
@@ -240,9 +261,9 @@ class TradeWizard {
       this.elements.wizardTarget.textContent = trade.target ? formatCurrency(trade.target) : '—';
     }
 
-    // Step 4 confirmation
+    // Step 4 confirmation - will be updated in updateConfirmation()
     if (this.elements.confirmTicker) {
-      this.elements.confirmTicker.textContent = trade.ticker || 'TICKER';
+      this.elements.confirmTicker.textContent = trade.ticker || 'No Ticker';
     }
     if (this.elements.confirmPosition) {
       this.elements.confirmPosition.textContent =
@@ -327,6 +348,13 @@ class TradeWizard {
   }
 
   updateConfirmation() {
+    // Update ticker from input
+    const ticker = this.elements.wizardTickerInput?.value.trim() || '';
+    if (this.elements.confirmTicker) {
+      this.elements.confirmTicker.textContent = ticker || 'No Ticker';
+      this.elements.confirmTicker.classList.toggle('wizard-confirmation__ticker--empty', !ticker);
+    }
+
     // Update setup row
     if (this.thesis.setupType) {
       this.elements.confirmSetupRow.style.display = 'flex';
