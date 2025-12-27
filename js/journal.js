@@ -285,13 +285,31 @@ class Journal {
       const realizedPnL = trade.totalRealizedPnL || 0;
       const target5R = trade.entry + (5 * riskPerShare);
 
+      // Check if trade is "free rolled" - realized profit covers original risk
+      const isFreeRoll = isTrimmed && realizedPnL >= trade.riskDollars;
+
       // Calculate risk percentage and color
       const riskPercent = (currentRisk / state.account.currentSize) * 100;
       let riskColorClass = 'text-success'; // green for < 0.5%
-      if (riskPercent >= 1) {
-        riskColorClass = 'text-danger'; // red for 1%+
+      if (riskPercent >= 2) {
+        riskColorClass = 'text-danger'; // red for 2%+
+      } else if (riskPercent >= 1) {
+        riskColorClass = 'text-warning'; // yellow for 1%-2%
       } else if (riskPercent >= 0.5) {
         riskColorClass = 'text-warning'; // yellow for 0.5%-1%
+      }
+
+      // Determine status badge
+      let statusClass, statusText;
+      if (isFreeRoll) {
+        statusClass = 'freeroll';
+        statusText = 'Free Roll';
+      } else if (isTrimmed) {
+        statusClass = 'trimmed';
+        statusText = 'Trimmed';
+      } else {
+        statusClass = 'active';
+        statusText = 'Open';
       }
 
       return `
@@ -301,7 +319,7 @@ class Journal {
               <span class="trade-card__ticker">${trade.ticker}</span>
               <span class="trade-card__shares">${shares} shares${isTrimmed ? ` (${trade.originalShares} orig)` : ''}</span>
             </div>
-            <span class="status-badge status-badge--${isTrimmed ? 'trimmed' : 'active'}">${isTrimmed ? 'Trimmed' : 'Open'}</span>
+            <span class="status-badge status-badge--${statusClass}">${statusText}</span>
           </div>
           <div class="trade-card__details">
             <div class="trade-card__detail">

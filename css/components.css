@@ -2755,6 +2755,11 @@
   background: var(--success-muted);
 }
 
+.status-badge--freeroll {
+  color: var(--primary);
+  background: var(--primary-muted);
+}
+
 .status-badge::before {
   content: '';
   width: 6px;
