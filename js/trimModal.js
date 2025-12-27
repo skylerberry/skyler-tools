@@ -247,6 +247,12 @@ class TrimModal {
       this.elements.totalPnL.className = `trim-preview__value ${isProfit ? 'text-success' : 'text-danger'}`;
     }
     if (this.elements.preview) this.elements.preview.classList.toggle('negative', !isProfit);
+
+    // Update confirm button text based on full close vs trim
+    if (this.elements.confirmBtn) {
+      const isFullClose = sharesRemaining === 0;
+      this.elements.confirmBtn.textContent = isFullClose ? 'Confirm Close' : 'Confirm Trim';
+    }
   }
 
   confirm() {
