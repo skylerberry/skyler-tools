@@ -289,6 +289,19 @@ class Journal {
       // Use small tolerance for floating point comparison
       const isFreeRoll = isTrimmed && realizedPnL >= (currentRisk - 0.01);
 
+      // Debug logging
+      if (isTrimmed) {
+        console.log('Free Roll Check:', {
+          ticker: trade.ticker,
+          realizedPnL,
+          currentRisk,
+          isFreeRoll,
+          totalRealizedPnL: trade.totalRealizedPnL,
+          remainingShares: trade.remainingShares,
+          riskPerShare
+        });
+      }
+
       // Calculate risk percentage and color
       const riskPercent = (currentRisk / state.account.currentSize) * 100;
       let riskColorClass = 'text-success'; // green for < 0.5%
