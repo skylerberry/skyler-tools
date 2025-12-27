@@ -333,7 +333,7 @@ class Journal {
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">5R Target</span>
-              <span class="trade-card__value text-success">${formatCurrency(target5R)}</span>
+              <span class="trade-card__value text-warning">${formatCurrency(target5R)}</span>
             </div>
             <div class="trade-card__detail">
               <span class="trade-card__label">Risk</span>
