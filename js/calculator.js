@@ -578,7 +578,7 @@ class Calculator {
   renderScenarios(accountSize, entry, riskPerShare, maxPositionPercent) {
     if (!this.elements.scenariosBody) return;
 
-    const riskLevels = [0.1, 0.25, 0.5, 1, 1.5];
+    const riskLevels = [0.1, 0.25, 0.5, 1, 1.5, 2];
     const currentRisk = state.account.riskPercent;
     const maxPosition = accountSize * (maxPositionPercent / 100);
 
