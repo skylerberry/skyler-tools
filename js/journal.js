@@ -374,11 +374,18 @@ class Journal {
       return;
     }
 
-    // Calculate risk based on remaining shares
+    // Calculate NET risk (remaining risk minus realized profit for trimmed trades)
     const totalRisk = activeTrades.reduce((sum, t) => {
       const shares = t.remainingShares ?? t.shares;
       const riskPerShare = t.entry - t.stop;
-      return sum + (shares * riskPerShare);
+      const grossRisk = shares * riskPerShare;
+
+      // For trimmed trades, subtract realized profit (net risk can't go below 0)
+      const realizedPnL = t.totalRealizedPnL || 0;
+      const isTrimmed = t.status === 'trimmed';
+      const netRisk = isTrimmed ? Math.max(0, grossRisk - realizedPnL) : grossRisk;
+
+      return sum + netRisk;
     }, 0);
     const riskPercent = (totalRisk / state.account.currentSize) * 100;
 
