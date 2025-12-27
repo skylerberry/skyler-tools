@@ -99,6 +99,7 @@
 }
 
 .scans-empty__title {
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
@@ -106,10 +107,10 @@
 }
 
 .scans-empty__text {
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   color: var(--text-muted);
-  margin: 0;
-  max-width: 300px;
+  margin: 0 0 var(--space-6);
+  max-width: 400px;
 }
 
 /* === Scan Table (injected) === */
