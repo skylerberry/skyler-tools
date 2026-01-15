@@ -1108,15 +1108,12 @@
         <h3 class="settings-section__title">Account Defaults</h3>
 
         <div class="input-group">
-          <label class="input-label" for="settingsAccountSize">Current Account Size</label>
-          <div class="input-row input-row--with-btn">
-            <div class="input-wrapper input-wrapper--prefix">
-              <span class="input-prefix">$</span>
-              <input type="text" class="input input--mono" id="settingsAccountSize" value="10,000" autocomplete="off">
-            </div>
-            <button type="button" class="btn btn--secondary btn--sm" id="resetAccountBtn">Reset</button>
+          <label class="input-label" for="settingsAccountSize">Starting Account Size</label>
+          <div class="input-wrapper input-wrapper--prefix">
+            <span class="input-prefix">$</span>
+            <input type="text" class="input input--mono" id="settingsAccountSize" value="10,000" autocomplete="off">
           </div>
-          <span class="input-hint">Supports K/M notation (e.g. 50k, 1.5m)</span>
+          <span class="input-hint">Your baseline balance. Supports K/M notation (e.g. 50k, 1.5m)</span>
         </div>
 
         <div class="input-group">
@@ -1166,6 +1163,9 @@
           </div>
         </div>
 
+        <button class="btn btn--secondary btn--full" id="resetAccountBtn">
+          Reset to Starting Balance
+        </button>
       </div>
 
       <!-- Appearance -->
