@@ -8,12 +8,12 @@
   display: none;
   flex-direction: column;
   padding: var(--space-6);
+  padding-bottom: var(--space-8);
   max-width: 1600px;
   margin: 0 auto;
   width: 100%;
   flex: 1;
   min-height: 0;
-  max-height: calc(100vh - var(--header-height) - 60px);
   overflow-y: auto;
 }
 
@@ -502,6 +502,7 @@
 
 .compound-insights {
   margin-top: var(--space-4);
+  margin-bottom: var(--space-4);
 }
 
 .stats-grid--insights {
