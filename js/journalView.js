@@ -370,9 +370,58 @@ class JournalView {
     const isTrimmed = trade.status === 'trimmed';
     const isClosed = trade.status === 'closed';
     const isActive = !isClosed;
+    const shares = trade.remainingShares ?? trade.shares;
 
     return `
       <div class="journal-row-details">
+        <div class="journal-row-details__section">
+          <div class="journal-row-details__label">Trade Details</div>
+          <div class="journal-row-details__trade-container" data-trade-id="${trade.id}">
+            <div class="journal-row-details__trade-view">
+              <div class="journal-row-details__trade-grid">
+                <div class="journal-row-details__trade-item">
+                  <span class="journal-row-details__trade-label">Entry</span>
+                  <span class="journal-row-details__trade-value">${formatCurrency(trade.entry)}</span>
+                </div>
+                <div class="journal-row-details__trade-item">
+                  <span class="journal-row-details__trade-label">Stop</span>
+                  <span class="journal-row-details__trade-value">${formatCurrency(trade.stop)}</span>
+                </div>
+                <div class="journal-row-details__trade-item">
+                  <span class="journal-row-details__trade-label">Shares</span>
+                  <span class="journal-row-details__trade-value">${shares}</span>
+                </div>
+              </div>
+              <button class="btn btn--xs btn--ghost" data-action="edit-trade" data-id="${trade.id}">Edit</button>
+            </div>
+            <div class="journal-row-details__trade-edit" style="display: none;">
+              <div class="journal-row-details__trade-grid">
+                <div class="journal-row-details__trade-item">
+                  <label class="journal-row-details__trade-label" for="editEntry-${trade.id}">Entry</label>
+                  <div class="journal-row-details__input-wrapper">
+                    <span class="journal-row-details__input-prefix">$</span>
+                    <input type="text" class="journal-row-details__trade-input" id="editEntry-${trade.id}" value="${trade.entry}" autocomplete="off">
+                  </div>
+                </div>
+                <div class="journal-row-details__trade-item">
+                  <label class="journal-row-details__trade-label" for="editStop-${trade.id}">Stop</label>
+                  <div class="journal-row-details__input-wrapper">
+                    <span class="journal-row-details__input-prefix">$</span>
+                    <input type="text" class="journal-row-details__trade-input" id="editStop-${trade.id}" value="${trade.stop}" autocomplete="off">
+                  </div>
+                </div>
+                <div class="journal-row-details__trade-item">
+                  <label class="journal-row-details__trade-label" for="editShares-${trade.id}">Shares</label>
+                  <input type="text" class="journal-row-details__trade-input" id="editShares-${trade.id}" value="${shares}" autocomplete="off">
+                </div>
+              </div>
+              <div class="journal-row-details__trade-actions">
+                <button class="btn btn--xs btn--primary" data-action="save-trade" data-id="${trade.id}">Save</button>
+                <button class="btn btn--xs btn--ghost" data-action="cancel-trade" data-id="${trade.id}">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="journal-row-details__section">
           <div class="journal-row-details__label">Notes</div>
           <div class="journal-row-details__notes-container" data-trade-id="${trade.id}">
@@ -487,6 +536,91 @@ class JournalView {
           container.querySelector('.journal-row-details__notes-input').value = trade.notes || '';
           container.querySelector('.journal-row-details__notes-view').style.display = 'flex';
           container.querySelector('.journal-row-details__notes-edit').style.display = 'none';
+        }
+      });
+    });
+
+    // Edit trade buttons
+    this.elements.tableBody.querySelectorAll('[data-action="edit-trade"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const container = this.elements.tableBody.querySelector(`.journal-row-details__trade-container[data-trade-id="${id}"]`);
+        if (container) {
+          container.querySelector('.journal-row-details__trade-view').style.display = 'none';
+          container.querySelector('.journal-row-details__trade-edit').style.display = 'block';
+          container.querySelector(`#editEntry-${id}`).focus();
+        }
+      });
+    });
+
+    // Save trade buttons
+    this.elements.tableBody.querySelectorAll('[data-action="save-trade"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const container = this.elements.tableBody.querySelector(`.journal-row-details__trade-container[data-trade-id="${id}"]`);
+        const trade = state.journal.entries.find(t => t.id === id);
+        if (container && trade) {
+          const newEntry = parseFloat(container.querySelector(`#editEntry-${id}`).value);
+          const newStop = parseFloat(container.querySelector(`#editStop-${id}`).value);
+          const newShares = parseInt(container.querySelector(`#editShares-${id}`).value);
+
+          // Validate inputs
+          if (isNaN(newEntry) || newEntry <= 0) {
+            alert('Please enter a valid entry price');
+            return;
+          }
+          if (isNaN(newStop) || newStop <= 0) {
+            alert('Please enter a valid stop loss');
+            return;
+          }
+          if (isNaN(newShares) || newShares <= 0) {
+            alert('Please enter a valid number of shares');
+            return;
+          }
+
+          // Calculate updated values
+          const stopDistance = Math.abs(newEntry - newStop);
+          const riskDollars = stopDistance * newShares;
+          const positionSize = newEntry * newShares;
+
+          // Build update object
+          const updates = {
+            entry: newEntry,
+            stop: newStop,
+            currentStop: newStop,
+            stopDistance: stopDistance,
+            riskDollars: riskDollars,
+            positionSize: positionSize
+          };
+
+          // Update shares - handle both remaining and original
+          if (trade.status === 'open') {
+            updates.shares = newShares;
+            updates.remainingShares = newShares;
+            updates.originalShares = newShares;
+          } else {
+            // For trimmed trades, only update remaining shares
+            updates.remainingShares = newShares;
+          }
+
+          state.updateJournalEntry(id, updates);
+        }
+      });
+    });
+
+    // Cancel trade edit buttons
+    this.elements.tableBody.querySelectorAll('[data-action="cancel-trade"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = parseInt(e.currentTarget.dataset.id);
+        const container = this.elements.tableBody.querySelector(`.journal-row-details__trade-container[data-trade-id="${id}"]`);
+        const trade = state.journal.entries.find(t => t.id === id);
+        if (container && trade) {
+          const shares = trade.remainingShares ?? trade.shares;
+          container.querySelector(`#editEntry-${id}`).value = trade.entry;
+          container.querySelector(`#editStop-${id}`).value = trade.stop;
+          container.querySelector(`#editShares-${id}`).value = shares;
+          container.querySelector('.journal-row-details__trade-view').style.display = 'flex';
+          container.querySelector('.journal-row-details__trade-edit').style.display = 'none';
         }
       });
     });

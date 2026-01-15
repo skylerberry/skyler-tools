@@ -1,11 +1,33 @@
 # Trade Manager - Current Status
 
-**Last Updated:** December 27, 2024
+**Last Updated:** January 15, 2025
 **Branch:** main
 
 ---
 
 ## Recently Completed Features
+
+### Journal Entry Editing ✅
+Added inline editing for journal trade details.
+
+**Features:**
+- **Edit Trade Details** - Entry price, stop loss, and shares can now be modified
+- **Inline Edit UI** - Click "Edit" in expanded row to reveal input fields
+- **Auto-recalculation** - Risk dollars, position size, and stop distance update on save
+- **Validation** - Ensures valid numeric inputs before saving
+
+### Autocomplete Disabled ✅
+Disabled browser autocomplete/history dropdowns on all calculator inputs.
+
+**Affected Fields:**
+- Trade Setup: ticker, entry price, stop loss, target price, custom risk
+- Quick Settings: account size, max position percent
+- Compound Calculator: starting capital, deposit/withdrawal amounts
+- Trim Modal: exit price, custom trim percent, new stop
+- Settings Panel: account size
+- Wizard: theme input
+
+---
 
 ### Active Trades Panel Enhancements ✅
 Major improvements to trade card display and risk management.

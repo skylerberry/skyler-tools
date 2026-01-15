@@ -413,6 +413,99 @@
   margin-top: var(--space-2);
 }
 
+/* Trade details editing */
+.journal-row-details__trade-container {
+  width: 100%;
+}
+
+.journal-row-details__trade-view {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.journal-row-details__trade-grid {
+  display: flex;
+  gap: var(--space-4);
+  flex: 1;
+}
+
+.journal-row-details__trade-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.journal-row-details__trade-label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.journal-row-details__trade-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
+}
+
+.journal-row-details__trade-edit {
+  width: 100%;
+}
+
+.journal-row-details__input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.journal-row-details__input-prefix {
+  padding: 0 var(--space-2);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border-default);
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.journal-row-details__trade-input {
+  width: 80px;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+}
+
+.journal-row-details__input-wrapper .journal-row-details__trade-input {
+  border: none;
+  border-radius: 0;
+}
+
+.journal-row-details__trade-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.journal-row-details__input-wrapper:focus-within {
+  border-color: var(--primary);
+}
+
+.journal-row-details__trade-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
 /* Trade log entries */
 .journal-row-details__trade-log {
   display: flex;

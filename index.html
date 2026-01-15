@@ -202,6 +202,7 @@
                   id="ticker"
                   placeholder="TSLA"
                   enterkeyhint="next"
+                  autocomplete="off"
                 >
               </div>
 
@@ -216,6 +217,7 @@
                       id="entryPrice"
                       placeholder="0.00"
                       enterkeyhint="next"
+                      autocomplete="off"
                     >
                     <div class="input-stepper">
                       <button type="button" class="input-stepper__btn" data-target="entryPrice" data-direction="up" title="Increase by 0.01" tabindex="-1">+</button>
@@ -239,6 +241,7 @@
                       id="stopLoss"
                       placeholder="0.00"
                       enterkeyhint="next"
+                      autocomplete="off"
                     >
                     <div class="input-stepper">
                       <button type="button" class="input-stepper__btn" data-target="stopLoss" data-direction="up" title="Increase by 0.01" tabindex="-1">+</button>
@@ -264,6 +267,7 @@
                     id="targetPrice"
                     placeholder="0.00"
                     enterkeyhint="done"
+                    autocomplete="off"
                   >
                 </div>
               </div>
@@ -288,7 +292,7 @@
                 <div class="risk-selector__custom">
                   <span class="risk-selector__label">Custom</span>
                   <div class="input-wrapper input-wrapper--suffix input-wrapper--compact">
-                    <input type="text" class="input input--mono" id="customRisk" placeholder="">
+                    <input type="text" class="input input--mono" id="customRisk" placeholder="" autocomplete="off">
                     <span class="input-suffix">%</span>
                   </div>
                 </div>
@@ -328,6 +332,7 @@
                       id="accountSize"
                       value="10,000"
                       placeholder="10,000"
+                      autocomplete="off"
                     >
                   </div>
                   <span class="input-hint">Supports K/M notation (e.g. 50k, 1.5m)</span>
@@ -351,7 +356,7 @@
                   <div class="preset-custom">
                     <span class="preset-custom__label">Custom</span>
                     <div class="input-wrapper input-wrapper--suffix input-wrapper--compact">
-                      <input type="text" class="input input--mono" id="maxPositionPercent" value="100">
+                      <input type="text" class="input input--mono" id="maxPositionPercent" value="100" autocomplete="off">
                       <span class="input-suffix">%</span>
                     </div>
                   </div>
@@ -942,7 +947,7 @@
               <div class="input-group">
                 <div class="input-wrapper input-wrapper--prefix">
                   <span class="input-prefix">$</span>
-                  <input type="text" id="compoundStartingCapital" class="input input--mono" placeholder="10000" value="10,000">
+                  <input type="text" id="compoundStartingCapital" class="input input--mono" placeholder="10000" value="10,000" autocomplete="off">
                 </div>
               </div>
               <div class="preset-group">
@@ -979,7 +984,7 @@
                   <div class="contribution-input-row">
                     <div class="input-wrapper input-wrapper--prefix">
                       <span class="input-prefix">$</span>
-                      <input type="text" id="depositAmount" class="input input--mono" placeholder="0">
+                      <input type="text" id="depositAmount" class="input input--mono" placeholder="0" autocomplete="off">
                     </div>
                     <select id="depositFrequency" class="input input--select">
                       <option value="monthly" selected>Monthly</option>
@@ -995,7 +1000,7 @@
                   <div class="contribution-input-row">
                     <div class="input-wrapper input-wrapper--prefix">
                       <span class="input-prefix">$</span>
-                      <input type="text" id="withdrawalAmount" class="input input--mono" placeholder="0">
+                      <input type="text" id="withdrawalAmount" class="input input--mono" placeholder="0" autocomplete="off">
                     </div>
                     <select id="withdrawalFrequency" class="input input--select">
                       <option value="monthly" selected>Monthly</option>
@@ -1106,7 +1111,7 @@
           <label class="input-label" for="settingsAccountSize">Starting Account Size</label>
           <div class="input-wrapper input-wrapper--prefix">
             <span class="input-prefix">$</span>
-            <input type="text" class="input input--mono" id="settingsAccountSize" value="10,000">
+            <input type="text" class="input input--mono" id="settingsAccountSize" value="10,000" autocomplete="off">
           </div>
           <span class="input-hint">Your baseline balance. Supports K/M notation (e.g. 50k, 1.5m)</span>
         </div>
@@ -1343,7 +1348,7 @@
           <label class="input-label" for="trimExitPrice">Exit Price</label>
           <div class="input-wrapper input-wrapper--prefix input-wrapper--sm">
             <span class="input-prefix">$</span>
-            <input type="text" class="input input--mono" id="trimExitPrice" placeholder="0.00">
+            <input type="text" class="input input--mono" id="trimExitPrice" placeholder="0.00" autocomplete="off">
           </div>
           <span class="trim-r-display" id="trimRDisplay">(5R)</span>
         </div>
@@ -1364,7 +1369,7 @@
         <div class="preset-custom">
           <span class="preset-custom__label">Custom</span>
           <div class="input-wrapper input-wrapper--suffix input-wrapper--compact">
-            <input type="text" class="input input--mono" id="customTrimPercent" placeholder="">
+            <input type="text" class="input input--mono" id="customTrimPercent" placeholder="" autocomplete="off">
             <span class="input-suffix">%</span>
           </div>
         </div>
@@ -1394,7 +1399,7 @@
           </label>
           <div class="input-wrapper input-wrapper--prefix input-wrapper--sm">
             <span class="input-prefix">$</span>
-            <input type="text" class="input input--mono" id="trimNewStop" placeholder="—">
+            <input type="text" class="input input--mono" id="trimNewStop" placeholder="—" autocomplete="off">
           </div>
         </div>
       </div>
@@ -1525,7 +1530,7 @@
 
           <div class="input-group">
             <label class="input-label" for="wizardTheme">Theme / Sector</label>
-            <input type="text" class="input" id="wizardTheme" placeholder="e.g. AI, EV, Semis...">
+            <input type="text" class="input" id="wizardTheme" placeholder="e.g. AI, EV, Semis..." autocomplete="off">
           </div>
 
           <div class="input-group">
