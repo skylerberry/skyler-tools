@@ -404,6 +404,11 @@ class Settings {
       currentSize: state.settings.startingAccountSize
     });
 
+    // Update the settings panel input
+    if (this.elements.settingsAccountSize) {
+      this.elements.settingsAccountSize.value = formatWithCommas(state.account.currentSize);
+    }
+
     this.updateAccountDisplay(state.account.currentSize);
     this.updateSummary();
 
