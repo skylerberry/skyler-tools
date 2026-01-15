@@ -276,9 +276,9 @@ class Settings {
     const theme = state.settings.theme || 'dark';
     document.documentElement.dataset.theme = theme;
 
-    // Apply to settings panel
+    // Apply to settings panel - show current account size (starting + realized P&L)
     if (this.elements.settingsAccountSize) {
-      this.elements.settingsAccountSize.value = formatWithCommas(state.settings.startingAccountSize);
+      this.elements.settingsAccountSize.value = formatWithCommas(state.account.currentSize);
     }
     if (this.elements.dynamicAccountToggle) {
       this.elements.dynamicAccountToggle.checked = state.settings.dynamicAccountEnabled;
@@ -335,6 +335,12 @@ class Settings {
     this.elements.settingsOverlay?.classList.add('open');
     document.body.style.overflow = 'hidden';
     state.setUI('settingsOpen', true);
+
+    // Update the account size input to show current value
+    if (this.elements.settingsAccountSize) {
+      this.elements.settingsAccountSize.value = formatWithCommas(state.account.currentSize);
+    }
+
     this.updateSummary();
   }
 
