@@ -502,6 +502,17 @@
   margin-bottom: var(--space-4);
 }
 
+.input-row--with-btn {
+  display: flex;
+  gap: var(--space-2);
+  align-items: stretch;
+  margin-bottom: 0;
+}
+
+.input-row--with-btn .input-wrapper {
+  flex: 1;
+}
+
 .input-label {
   display: block;
   margin-bottom: var(--space-2);
