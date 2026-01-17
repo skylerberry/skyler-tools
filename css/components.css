@@ -2359,10 +2359,10 @@
 /* Row Colors */
 .r-levels__row--stop { color: var(--danger); }
 .r-levels__row--entry { color: var(--primary); }
-.r-levels__row--r1 { color: hsl(142, 45%, 32%); }
-.r-levels__row--r2 { color: hsl(142, 50%, 36%); }
-.r-levels__row--r3 { color: hsl(142, 55%, 40%); }
-.r-levels__row--r4 { color: hsl(142, 60%, 44%); }
+.r-levels__row--r1 { color: #9c27b0; }
+.r-levels__row--r2 { color: #4caf51; }
+.r-levels__row--r3 { color: #056756; }
+.r-levels__row--r4 { color: #ec407a; }
 .r-levels__row--r5 { color: var(--warning); }
 
 /* 5R Hero Level - Golden target */
