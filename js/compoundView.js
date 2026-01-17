@@ -54,6 +54,7 @@ class CompoundView {
       view: document.getElementById('compoundView'),
       input: document.getElementById('compoundStartingCapital'),
       presets: document.querySelectorAll('#compoundView .preset-group .preset-btn[data-capital]'),
+      tableContainer: document.querySelector('.compound-table-container'),
       tableHead: document.querySelector('#compoundTable thead tr'),
       tableBody: document.getElementById('compoundTableBody'),
       summaryContainer: document.getElementById('compoundSummary'),
@@ -98,6 +99,9 @@ class CompoundView {
 
     // Column header click for rate selection (event delegation)
     this.elements.tableHead?.addEventListener('click', (e) => this.handleRateClick(e));
+
+    // Table container scroll - hide fade when scrolled to end
+    this.elements.tableContainer?.addEventListener('scroll', () => this.handleTableScroll());
   }
 
   handleRateClick(e) {
@@ -110,6 +114,14 @@ class CompoundView {
       this.updateSelectedRateUI();
       this.renderInsights();
     }
+  }
+
+  handleTableScroll() {
+    const container = this.elements.tableContainer;
+    if (!container) return;
+
+    const isScrolledToEnd = container.scrollLeft + container.clientWidth >= container.scrollWidth - 5;
+    container.classList.toggle('scrolled-end', isScrolledToEnd);
   }
 
   updateSelectedRateUI() {

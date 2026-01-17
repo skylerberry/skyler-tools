@@ -237,6 +237,26 @@
   background: transparent;
   border: none;
   overflow-x: auto;
+  position: relative;
+}
+
+/* Fade gradient on right edge to indicate more content */
+.compound-table-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 60px;
+  background: linear-gradient(to right, transparent, var(--bg-base));
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Hide fade when scrolled to the end */
+.compound-table-container.scrolled-end::after {
+  opacity: 0;
 }
 
 /* === Table === */
