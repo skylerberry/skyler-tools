@@ -2326,32 +2326,8 @@
   color: var(--text-muted);
 }
 
-/* Progressive styling for higher Rs (tags + profits) */
-.r-levels__row--r3 .r-levels__tag {
-  font-size: 12px;
-  font-weight: var(--font-bold);
-}
-.r-levels__row--r3 .r-levels__profit {
-  font-size: 13px;
-  font-weight: var(--font-semibold);
-}
-
-.r-levels__row--r4 .r-levels__tag {
-  font-size: 13px;
-  font-weight: var(--font-bold);
-}
-.r-levels__row--r4 .r-levels__profit {
-  font-size: 14px;
-  font-weight: var(--font-semibold);
-}
-
-.r-levels__row--r5 .r-levels__tag {
-  font-size: 14px;
-  font-weight: var(--font-bold);
-}
+/* 5R row keeps warning color for profit */
 .r-levels__row--r5 .r-levels__profit {
-  font-size: 15px;
-  font-weight: var(--font-bold);
   color: var(--warning);
 }
 
