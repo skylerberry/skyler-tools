@@ -1,11 +1,65 @@
 # Trade Manager - Current Status
 
-**Last Updated:** January 15, 2025
+**Last Updated:** January 17, 2025
 **Branch:** main
 
 ---
 
 ## Recently Completed Features
+
+### What If Mode ✅
+Added experimental mode to test different account sizes without affecting real calculations.
+
+**Features:**
+- **Toggle in Quick Settings** - "What If" checkbox enables experimental mode
+- **Visual Indicator** - Settings card gets warning border/glow when active
+- **Real Account Display** - Shows saved account value while experimenting
+- **Auto-restore** - Original account size restored when mode disabled
+- **Prevents Accidents** - Useful when demoing or exploring "what if" scenarios
+
+### R-Level Enhancements ✅
+Improved the risk/reward levels display.
+
+**Features:**
+- **Trading Tooltips** - Native tooltips with tips for each R-level:
+  - Stop: "Cut losses quickly. Honor your stop."
+  - 1R: "Break-even after risk. Consider taking some off."
+  - 2R: "Solid win. Lock in profits or trail stop."
+  - 3R: "Excellent trade. Let winners run with a trailing stop."
+  - 5R: "Home run! Consider scaling out in tranches."
+- **Updated Colors** - 1R=#9c27b0 (purple), 2R=#4caf51 (green), 3R=#056756 (teal), 4R=#ec407a (pink)
+- **Consistent Font Size** - Removed progressive sizing for R3/R4/R5
+- **Full Line Opacity** - Dashed lines now at 100% opacity
+
+### Input Validation ✅
+Added character filtering to prevent invalid input.
+
+**Fields with numeric-only filtering (numbers, decimals, commas):**
+- Entry price, stop loss, target price
+- Account size, max position percent
+- All contribution/withdrawal amounts
+
+**Ticker field:** Alphanumeric only (A-Z, 0-9)
+
+### UI/UX Improvements ✅
+
+**Calculator:**
+- **Ticker Moved** - Now positioned below target price in entry flow
+- **Ticker Tooltip** - Explains "For journaling purposes. Leave blank for quick calculations."
+- **Profit Column Width** - Changed from fixed 70px to auto to prevent TRIM badge overlap
+
+**Compound Calculator:**
+- **Better Spacing** - Removed max-height constraint, added bottom padding
+- **Scroll Indicator** - Fade gradient on right edge indicates more columns
+- **Column Hint** - Subtitle now reads "Click any column for insights"
+
+**Quick Settings:**
+- **Fixed Double Border** - Resolved "double chin" effect when collapsed
+
+**Layout:**
+- **Dashboard Padding** - Aligned with other views (24px)
+- **Removed Scans** - Nav link removed to declutter (infrastructure remains)
+- **Removed Export Shortcuts** - CSV/TSV/PDF buttons removed from dashboard (still in Journal)
 
 ### Journal Entry Editing ✅
 Added inline editing for journal trade details.
@@ -45,6 +99,7 @@ Major improvements to trade card display and risk management.
 - **PnL% Column** - Added percentage-based P&L display
 - **Renamed Columns** - "PnL" → "PnL ($)", "R" → "R-Multiple"
 - **Closed Status Pill** - Changed from green to grey for clarity
+- **Action Icons Centered** - Better alignment in Actions column
 
 ### Trim Modal Enhancements ✅
 - **Dynamic Confirm Button** - Shows "Confirm Close" for 100% position, "Confirm Trim" for partial
@@ -53,12 +108,6 @@ Major improvements to trade card display and risk management.
 ### Calculator Updates ✅
 - **Risk Scenarios** - Added 2% to risk levels (0.1%, 0.25%, 0.5%, 1%, 1.5%, 2%)
 - **Open Risk Tooltip** - Explains total dollar risk across all active trades
-
-### Scans View (Coming Soon) ✅
-Infrastructure in place for future scan archive feature.
-- Navigation entry added
-- Empty state with "Coming Soon" message
-- Manifest and upload script skeleton ready
 
 ---
 
@@ -102,6 +151,8 @@ Premium synthesized audio using Web Audio API (no external files).
 
 ## Recent Bug Fixes
 
+- **Calculator input handling** - Fixed duplicate event listeners causing calculation failures
+- **Settings account display** - Now shows starting account size (not current) with proper reset flow
 - **Mobile Safari paste** - Added `pointer-events: none` to hidden modal overlays
 - **Mobile wizard scroll** - Made wizard steps scrollable with `-webkit-overflow-scrolling: touch`
 - **Audio clipping** - Warmup AudioContext on first user interaction (silent sound primes pipeline)
@@ -167,6 +218,7 @@ journalMeta: {
 - Streak recovery/saver
 - Achievement sharing
 - Swipe gestures on mobile
+- Scans archive (infrastructure ready)
 
 ### Polish
 - Error handling for localStorage quota exceeded
@@ -189,10 +241,9 @@ testSound("click")          // Test UI click
 ## Git History (Recent)
 
 ```
-8bdc5b2 Add click sound to wizard selection buttons
-97c591f Fix audio clipping on first sound play
-1d2980a Add premium sound effects system (Web Audio API)
-2c4ad1b Remove outdated planning documents
-f649e95 Fix mobile wizard scroll - enable touch scrolling on steps
-b86be9a Fix mobile Safari touch events on hidden overlays
+be580be Center action icons in Journal table
+c7c9cda Add 'Actions' column header to Journal table
+01752b0 Add emoji action buttons to Journal table
+c424506 Fix positions page: NET risk and Free Rolled status
+ba36201 Change Open status pill to green across all views
 ```
