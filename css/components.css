@@ -892,13 +892,14 @@
 .card--settings .card__body--collapsible {
   position: static;
   padding: 0 var(--space-4);
-  background: var(--bg-surface);
+  background: transparent;
   border-top: none;
   border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
 }
 
 .card--settings.open .card__body--collapsible {
   padding: var(--space-4);
+  background: var(--bg-surface);
 }
 
 .card--settings .settings-grid {
