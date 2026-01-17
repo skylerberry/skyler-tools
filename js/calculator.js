@@ -119,10 +119,28 @@ class Calculator {
   bindEvents() {
     const { accountSize, customRisk, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice } = this.elements;
 
-    // Input events
-    [customRisk, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice].forEach(el => {
-      if (el) el.addEventListener('input', () => this.calculate());
+    // Numeric-only input fields (allow numbers, decimal, comma)
+    const numericFields = [customRisk, maxPositionPercent, entryPrice, stopLoss, targetPrice];
+    numericFields.forEach(el => {
+      if (el) {
+        el.addEventListener('input', (e) => {
+          // Remove any characters that aren't digits, decimal points, or commas
+          const cleaned = e.target.value.replace(/[^0-9.,]/g, '');
+          if (cleaned !== e.target.value) {
+            e.target.value = cleaned;
+          }
+          this.calculate();
+        });
+      }
     });
+
+    // Ticker is alphanumeric (letters and numbers only)
+    if (ticker) {
+      ticker.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        this.calculate();
+      });
+    }
 
     // Risk button handlers
     document.querySelectorAll('.risk-btn').forEach(btn => {
@@ -141,6 +159,11 @@ class Calculator {
     // Account size with K/M instant conversion and formatting
     if (accountSize) {
       accountSize.addEventListener('input', (e) => {
+        // Allow numbers, decimal, comma, and K/M notation
+        const cleaned = e.target.value.replace(/[^0-9.,kKmM]/g, '');
+        if (cleaned !== e.target.value) {
+          e.target.value = cleaned;
+        }
         const inputValue = e.target.value.trim();
 
         // Instant format when K/M notation is used
