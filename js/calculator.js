@@ -119,20 +119,32 @@ class Calculator {
   bindEvents() {
     const { accountSize, customRisk, maxPositionPercent, ticker, entryPrice, stopLoss, targetPrice } = this.elements;
 
-    // Numeric-only input fields (allow numbers, decimal, comma)
-    const numericFields = [customRisk, maxPositionPercent, entryPrice, stopLoss, targetPrice];
-    numericFields.forEach(el => {
+    // Helper to filter numeric input (only digits, decimal, comma)
+    const filterNumeric = (e) => {
+      const cleaned = e.target.value.replace(/[^0-9.,]/g, '');
+      if (cleaned !== e.target.value) {
+        e.target.value = cleaned;
+      }
+    };
+
+    // Numeric-only input fields
+    [maxPositionPercent, entryPrice, stopLoss, targetPrice].forEach(el => {
       if (el) {
         el.addEventListener('input', (e) => {
-          // Remove any characters that aren't digits, decimal points, or commas
-          const cleaned = e.target.value.replace(/[^0-9.,]/g, '');
-          if (cleaned !== e.target.value) {
-            e.target.value = cleaned;
-          }
+          filterNumeric(e);
           this.calculate();
         });
       }
     });
+
+    // Custom risk input - also clears active risk button
+    if (customRisk) {
+      customRisk.addEventListener('input', (e) => {
+        filterNumeric(e);
+        document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('risk-btn--active'));
+        this.calculate();
+      });
+    }
 
     // Ticker is alphanumeric (letters and numbers only)
     if (ticker) {
@@ -146,15 +158,6 @@ class Calculator {
     document.querySelectorAll('.risk-btn').forEach(btn => {
       btn.addEventListener('click', (e) => this.handleRiskButton(e));
     });
-
-    // Custom risk input handler
-    if (customRisk) {
-      customRisk.addEventListener('input', () => {
-        // Clear active state on risk buttons when typing custom value
-        document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('risk-btn--active'));
-        this.calculate();
-      });
-    }
 
     // Account size with K/M instant conversion and formatting
     if (accountSize) {
