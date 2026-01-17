@@ -925,6 +925,53 @@
   margin-bottom: var(--space-2);
 }
 
+/* What If Mode Toggle */
+.what-if-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.what-if-toggle .toggle-switch--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.what-if-toggle .toggle-switch__label {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-primary);
+}
+
+.what-if-hint {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* What If Mode Active State */
+.card--settings.what-if-active {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 1px var(--warning), 0 0 12px rgba(245, 158, 11, 0.15);
+}
+
+.card--settings.what-if-active .card__header--toggle {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.card--settings.what-if-active .settings-summary {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+
+.what-if-active .what-if-hint {
+  color: var(--warning);
+  font-weight: var(--font-medium);
+}
+
 /* card__body--collapsible styles now in animations.css for smooth expand/collapse */
 
 .card__header {

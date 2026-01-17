@@ -9,6 +9,8 @@ import { showToast } from './ui.js';
 class Calculator {
   constructor() {
     this.elements = {};
+    this.whatIfMode = false;
+    this.savedAccountSize = null; // Store real account size when in What If mode
   }
 
   init() {
@@ -105,7 +107,12 @@ class Calculator {
       r4RPrice: document.getElementById('r4RPrice'),
       r4RProfit: document.getElementById('r4RProfit'),
       r5RPrice: document.getElementById('r5RPrice'),
-      r5RProfit: document.getElementById('r5RProfit')
+      r5RProfit: document.getElementById('r5RProfit'),
+
+      // What If Mode
+      whatIfModeToggle: document.getElementById('whatIfModeToggle'),
+      whatIfHint: document.getElementById('whatIfHint'),
+      settingsCard: document.getElementById('settingsCard')
     };
   }
 
@@ -146,9 +153,11 @@ class Calculator {
             const newLength = e.target.value.length;
             const newCursorPosition = Math.max(0, cursorPosition + (newLength - originalLength));
             e.target.setSelectionRange(newCursorPosition, newCursorPosition);
-            // Update state and displays with converted value
-            state.updateAccount({ currentSize: converted });
-            state.emit('accountSizeChanged', converted);
+            // Only persist to state if NOT in What If mode
+            if (!this.whatIfMode) {
+              state.updateAccount({ currentSize: converted });
+              state.emit('accountSizeChanged', converted);
+            }
           }
         }
         this.calculate();
@@ -157,7 +166,10 @@ class Calculator {
         const num = parseNumber(e.target.value);
         if (num !== null) {
           e.target.value = formatWithCommas(num);
-          state.emit('accountSizeChanged', num);
+          // Only persist to state if NOT in What If mode
+          if (!this.whatIfMode) {
+            state.emit('accountSizeChanged', num);
+          }
         }
       });
     }
@@ -181,6 +193,40 @@ class Calculator {
     document.querySelectorAll('.input-stepper__btn').forEach(btn => {
       btn.addEventListener('click', (e) => this.handleStepper(e));
     });
+
+    // What If Mode toggle
+    if (this.elements.whatIfModeToggle) {
+      this.elements.whatIfModeToggle.addEventListener('change', (e) => this.toggleWhatIfMode(e.target.checked));
+    }
+  }
+
+  toggleWhatIfMode(enabled) {
+    this.whatIfMode = enabled;
+    const { settingsCard, whatIfHint, accountSize } = this.elements;
+
+    if (enabled) {
+      // Entering What If mode - save current account size
+      this.savedAccountSize = state.account.currentSize;
+      settingsCard?.classList.add('what-if-active');
+      if (whatIfHint) {
+        whatIfHint.textContent = `Real account: ${formatCurrency(this.savedAccountSize)}`;
+      }
+    } else {
+      // Exiting What If mode - restore saved account size
+      if (this.savedAccountSize !== null) {
+        state.updateAccount({ currentSize: this.savedAccountSize });
+        if (accountSize) {
+          accountSize.value = formatWithCommas(this.savedAccountSize);
+        }
+        state.emit('accountSizeChanged', this.savedAccountSize);
+        this.savedAccountSize = null;
+      }
+      settingsCard?.classList.remove('what-if-active');
+      if (whatIfHint) {
+        whatIfHint.textContent = 'Experiment without changing your real settings';
+      }
+      this.calculate();
+    }
   }
 
   handleStepper(e) {
@@ -291,11 +337,18 @@ class Calculator {
     const target = parseNumber(this.elements.targetPrice?.value);
     const maxPositionPercent = parseNumber(this.elements.maxPositionPercent?.value) || state.account.maxPositionPercent;
 
-    // Update state
-    state.updateAccount({
-      currentSize: accountSize || state.settings.startingAccountSize,
-      riskPercent: riskPercent || state.settings.defaultRiskPercent
-    });
+    // Update state (skip account size update if in What If mode)
+    if (!this.whatIfMode) {
+      state.updateAccount({
+        currentSize: accountSize || state.settings.startingAccountSize,
+        riskPercent: riskPercent || state.settings.defaultRiskPercent
+      });
+    } else {
+      // In What If mode, only update risk percent, not account size
+      state.updateAccount({
+        riskPercent: riskPercent || state.settings.defaultRiskPercent
+      });
+    }
 
     state.updateTrade({
       ticker: this.elements.ticker?.value.toUpperCase() || '',
