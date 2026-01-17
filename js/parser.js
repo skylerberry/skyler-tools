@@ -163,7 +163,7 @@ class AlertParser {
     if (parsed.riskPercent) parts.push(`${parsed.riskPercent}%`);
 
     this.flashButton('success');
-    showToast(`⚡ Parsed: ${parts.join(' | ')}`, 'success');
+    showToast(`⚡ Loaded: ${parts.join(' | ')}`, 'success');
 
     // On mobile, scroll to Position Details section
     this.scrollToResultsOnMobile();
