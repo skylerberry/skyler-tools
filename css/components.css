@@ -899,7 +899,6 @@
 
 .card--settings.open .card__body--collapsible {
   padding: var(--space-4);
-  border-top: 1px solid var(--border-subtle);
 }
 
 .card--settings .settings-grid {
